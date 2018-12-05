@@ -53,6 +53,7 @@ app.get('/', function(request, response) {
  */
 app.get('/token', function(request, response) {
   var identity = randomName();
+  console.log(identity, 'identity')
 
   // Create an access token which we will sign and return to the client,
   // containing the grant we just created.
@@ -61,19 +62,21 @@ app.get('/token', function(request, response) {
     process.env.TWILIO_API_KEY,
     process.env.TWILIO_API_SECRET
   );
-
+  console.log(token, 'token')
   // Assign the generated identity to the token.
   token.identity = identity;
 
   // Grant the access token Twilio Video capabilities.
   var grant = new VideoGrant();
   token.addGrant(grant);
-
+  console.log(grant, 'grant')
   // Serialize the token to a JWT string and include it in a JSON response.
   response.send({
     identity: identity,
     token: token.toJwt()
   });
+  console.log('response');
+  
 });
 
 // Create http server and run it.
