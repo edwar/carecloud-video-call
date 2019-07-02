@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 /**
  * Load Twilio configuration from .env config file - the following environment
@@ -7,43 +7,43 @@
  * process.env.TWILIO_API_KEY
  * process.env.TWILIO_API_SECRET
  */
-require('dotenv').load();
+require("dotenv").load();
 
-var http = require('http');
-var path = require('path');
-var AccessToken = require('twilio').jwt.AccessToken;
+var http = require("http");
+var path = require("path");
+var AccessToken = require("twilio").jwt.AccessToken;
 var VideoGrant = AccessToken.VideoGrant;
-var express = require('express');
-var randomName = require('./randomname');
+var express = require("express");
+var randomName = require("./randomname");
 
 // Create Express webapp.
 var app = express();
 
 // Set up the paths for the examples.
 [
-  'bandwidthconstraints',
-  'codecpreferences',
-  'localvideofilter',
-  'localvideosnapshot',
-  'mediadevices'
+  "bandwidthconstraints",
+  "codecpreferences",
+  "localvideofilter",
+  "localvideosnapshot",
+  "mediadevices"
 ].forEach(function(example) {
   var examplePath = path.join(__dirname, `../examples/${example}/public`);
   app.use(`/${example}`, express.static(examplePath));
 });
 
 // Set up the path for the quickstart.
-var quickstartPath = path.join(__dirname, '../quickstart/public');
-app.use('/quickstart', express.static(quickstartPath));
+var quickstartPath = path.join(__dirname, "../quickstart/public");
+app.use("/quickstart", express.static(quickstartPath));
 
 // Set up the path for the examples page.
-var examplesPath = path.join(__dirname, '../examples');
-app.use('/examples', express.static(examplesPath));
+var examplesPath = path.join(__dirname, "../examples");
+app.use("/examples", express.static(examplesPath));
 
 /**
  * Default to the Quick Start application.
  */
-app.get('/', function(request, response) {
-  response.redirect('/quickstart');
+app.get("/", function(request, response) {
+  response.redirect("/quickstart");
 });
 
 /**
@@ -51,37 +51,36 @@ app.get('/', function(request, response) {
  * username for the client requesting a token, and takes a device ID as a query
  * parameter.
  */
-app.get('/token', function(request, response) {
-  var identity = randomName();
-  console.log(identity, 'identity')
+app.get("/token", function(request, response) {
+  var identity = "dosorio";
+  console.log(identity, "identity");
 
   // Create an access token which we will sign and return to the client,
   // containing the grant we just created.
   var token = new AccessToken(
-    'AC0899dfbac4d4374a162ad3f494a29cb9',
-    'SK75ad3d78d8a38f11c4898e893e88638a',
-    'FDutRpURHMbDIto9LEOI7K3Z1vg7tTvR'
+    "ACdd0c4537ed1cd8a661f7afdb88bfe70f",
+    "SKf4bec81406c23e58edb33fa8f4bca4f0",
+    "ED2c4w8pd2iPfoF05qrPrWvSxXNjcvLE"
   );
-  console.log(token, 'token')
+  console.log(token, "token");
   // Assign the generated identity to the token.
   token.identity = identity;
 
   // Grant the access token Twilio Video capabilities.
   var grant = new VideoGrant();
   token.addGrant(grant);
-  console.log(grant, 'grant')
+  console.log(grant, "grant");
   // Serialize the token to a JWT string and include it in a JSON response.
   response.send({
     identity: identity,
     token: token.toJwt()
   });
-  console.log('response');
-  
+  console.log("response");
 });
 
 // Create http server and run it.
 var server = http.createServer(app);
 var port = process.env.PORT || 3000;
 server.listen(port, function() {
-  console.log('Express server running on *:' + port);
+  console.log("Express server running on *:" + port);
 });
