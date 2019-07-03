@@ -58,9 +58,9 @@ app.get("/token", function(request, response) {
   // Create an access token which we will sign and return to the client,
   // containing the grant we just created.
   var token = new AccessToken(
-    "ACdd0c4537ed1cd8a661f7afdb88bfe70f",
-    "SKf4bec81406c23e58edb33fa8f4bca4f0",
-    "ED2c4w8pd2iPfoF05qrPrWvSxXNjcvLE"
+    "ACc748354e6de06f3e526b492791b94568",
+    "SKb78fa6fdae609ff2f1c70082f9eba7b6",
+    "c44b9114f9124939e3538242feb35977"
   );
   console.log(token, "token");
   // Assign the generated identity to the token.
