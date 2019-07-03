@@ -65,7 +65,7 @@ module.exports.grayscale = grayscale;
 module.exports.none = none;
 module.exports.sepia = sepia;
 
-},{"stackblur-canvas":62}],2:[function(require,module,exports){
+},{"stackblur-canvas":61}],2:[function(require,module,exports){
 'use strict';
 
 var Video = require('twilio-video');
@@ -112,7 +112,7 @@ function filterLocalVideo(video, filtered, name) {
 module.exports.displayLocalVideo = displayLocalVideo;
 module.exports.filterLocalVideo = filterLocalVideo;
 
-},{"./filters":1,"twilio-video":75}],3:[function(require,module,exports){
+},{"./filters":1,"twilio-video":74}],3:[function(require,module,exports){
 'use strict';
 
 var Prism = require('prismjs');
@@ -140,7 +140,7 @@ displayLocalVideo(video).then(function() {
   };
 });
 
-},{"../../util/getsnippet":4,"./helpers":2,"prismjs":60}],4:[function(require,module,exports){
+},{"../../util/getsnippet":4,"./helpers":2,"prismjs":59}],4:[function(require,module,exports){
 'use strict';
 
 /**
@@ -157,49 +157,32 @@ module.exports = getSnippet;
 
 },{}],5:[function(require,module,exports){
 module.exports={
-  "_from": "@twilio/sip.js@^0.7.7",
-  "_id": "@twilio/sip.js@0.7.7",
-  "_inBundle": false,
-  "_integrity": "sha1-z/UPZvmyldRvIZc3tyeAx9Dm31I=",
-  "_location": "/@twilio/sip.js",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "range",
-    "registry": true,
-    "raw": "@twilio/sip.js@^0.7.7",
-    "name": "@twilio/sip.js",
-    "escapedName": "@twilio%2fsip.js",
-    "scope": "@twilio",
-    "rawSpec": "^0.7.7",
-    "saveSpec": null,
-    "fetchSpec": "^0.7.7"
-  },
-  "_requiredBy": [
-    "/twilio-video"
-  ],
-  "_resolved": "https://registry.npmjs.org/@twilio/sip.js/-/sip.js-0.7.7.tgz",
-  "_shasum": "cff50f66f9b295d46f219737b72780c7d0e6df52",
-  "_spec": "@twilio/sip.js@^0.7.7",
-  "_where": "/Users/CARECLOUD/Documents/Edwar/video-quickstart-js/node_modules/twilio-video",
-  "author": {
-    "name": "OnSIP",
-    "email": "developer@onsip.com",
-    "url": "http://sipjs.com/authors/"
-  },
+  "name": "@twilio/sip.js",
+  "title": "SIP.js",
+  "description": "A simple, intuitive, and powerful JavaScript signaling library",
+  "version": "0.7.7",
+  "main": "src/index.js",
   "browser": {
     "./src/environment.js": "./src/environment_browser.js"
   },
-  "bugs": {
-    "url": "https://github.com/onsip/SIP.js/issues"
-  },
-  "bundleDependencies": false,
+  "homepage": "http://sipjs.com",
+  "author": "OnSIP <developer@onsip.com> (http://sipjs.com/authors/)",
   "contributors": [
     {
       "url": "https://github.com/onsip/SIP.js/blob/master/THANKS.md"
     }
   ],
-  "deprecated": false,
-  "description": "A simple, intuitive, and powerful JavaScript signaling library",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onsip/SIP.js.git"
+  },
+  "keywords": [
+    "sip",
+    "websocket",
+    "webrtc",
+    "library",
+    "javascript"
+  ],
   "devDependencies": {
     "beefy": "^2.1.5",
     "browserify": "^4.1.8",
@@ -218,28 +201,12 @@ module.exports={
   "engines": {
     "node": ">=0.12"
   },
-  "homepage": "http://sipjs.com",
-  "keywords": [
-    "sip",
-    "websocket",
-    "webrtc",
-    "library",
-    "javascript"
-  ],
   "license": "MIT",
-  "main": "src/index.js",
-  "name": "@twilio/sip.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/onsip/SIP.js.git"
-  },
   "scripts": {
-    "build": "grunt build",
     "repl": "beefy test/repl.js --open",
+    "build": "grunt build",
     "test": "grunt travis --verbose"
-  },
-  "title": "SIP.js",
-  "version": "0.7.7"
+  }
 }
 
 },{}],6:[function(require,module,exports){
@@ -11721,10 +11688,21 @@ return MediaStreamManager;
 };
 
 },{}],39:[function(require,module,exports){
-/* global webkitRTCPeerConnection, mozRTCPeerConnection */
 'use strict';
 
 var flatMap = require('./util').flatMap;
+var guessBrowser = require('./util').guessBrowser;
+var getSdpFormat = require('./util/sdp').getSdpFormat;
+
+var guess = guessBrowser();
+var isChrome = guess === 'chrome';
+var isFirefox = guess === 'firefox';
+var isSafari = guess === 'safari';
+var sdpFormat = getSdpFormat();
+
+var chromeMajorVersion = isChrome
+  ? parseInt(navigator.userAgent.match(/Chrome\/([0-9]+)/)[1], 10)
+  : null;
 
 /**
  * Get the standardized {@link RTCPeerConnection} statistics.
@@ -11760,15 +11738,18 @@ function _getStats(peerConnection, options) {
   };
 
   var trackStatsPromises = flatMap([
-    [localAudioTracks, 'localAudioTrackStats'],
-    [localVideoTracks, 'localVideoTrackStats'],
-    [remoteAudioTracks, 'remoteAudioTrackStats'],
-    [remoteVideoTracks, 'remoteVideoTrackStats']
-  ], function(pair) {
-    var tracks = pair[0];
-    var statsArrayName = pair[1];
+    [localAudioTracks, 'localAudioTrackStats', false],
+    [localVideoTracks, 'localVideoTrackStats', false],
+    [remoteAudioTracks, 'remoteAudioTrackStats', true],
+    [remoteVideoTracks, 'remoteVideoTrackStats', true]
+  ], function(triple) {
+    var tracks = triple[0];
+    var statsArrayName = triple[1];
+    var isRemote = triple[2];
     return tracks.map(function(track) {
-      return getTrackStats(peerConnection, track, options).then(function(stats) {
+      return getTrackStats(peerConnection, track, Object.assign({
+        isRemote: isRemote
+      }, options)).then(function(stats) {
         stats.trackId = track.id;
         statsResponse[statsArrayName].push(stats);
       });
@@ -11793,23 +11774,23 @@ function _getStats(peerConnection, options) {
 function getActiveIceCandidatePairStats(peerConnection, options) {
   options = options || {};
 
-  if (typeof options.testForChrome !== 'undefined'
-    || typeof webkitRTCPeerConnection !== 'undefined') {
-    return peerConnection.getStats().then(standardizeChromeActiveIceCandidatePairStats);
+  if (typeof options.testForChrome !== 'undefined' || isChrome
+    || typeof options.testForSafari  !== 'undefined' || isSafari) {
+    return peerConnection.getStats().then(
+      standardizeChromeOrSafariActiveIceCandidatePairStats);
   }
-  if (typeof options.testForFirefox !== 'undefined'
-    || typeof mozRTCPeerConnection !== 'undefined') {
+  if (typeof options.testForFirefox !== 'undefined' || isFirefox) {
     return peerConnection.getStats().then(standardizeFirefoxActiveIceCandidatePairStats);
   }
   return Promise.reject(new Error('RTCPeerConnection#getStats() not supported'));
 }
 
 /**
- * Standardize the active RTCIceCandidate pair's statistics in Chrome.
+ * Standardize the active RTCIceCandidate pair's statistics in Chrome or Safari.
  * @param {RTCStatsReport} stats
  * @returns {?StandardizedActiveIceCandidatePairStatsReport}
  */
-function standardizeChromeActiveIceCandidatePairStats(stats) {
+function standardizeChromeOrSafariActiveIceCandidatePairStats(stats) {
   var activeCandidatePairStats = Array.from(stats.values()).find(function(stat) {
     return stat.type === 'candidate-pair' && stat.nominated;
   });
@@ -11905,10 +11886,10 @@ function standardizeFirefoxActiveIceCandidatePairStats(stats) {
 
   var standardizedCandidateStatsKeys = [
     { key: 'candidateType', type: 'string' },
-    { key: 'ip', ffKey: 'ipAddress', type: 'string' },
-    { key: 'port', ffKey: 'portNumber', type: 'number' },
+    { key: 'ip', ffKeys: ['address', 'ipAddress'], type: 'string' },
+    { key: 'port', ffKeys: ['portNumber'], type: 'number' },
     { key: 'priority', type: 'number' },
-    { key: 'protocol', ffKey: 'transport', type: 'string' },
+    { key: 'protocol', ffKeys: ['transport'], type: 'string' },
     { key: 'url', type: 'string' }
   ];
 
@@ -11926,7 +11907,9 @@ function standardizeFirefoxActiveIceCandidatePairStats(stats) {
 
   var standatdizedLocalCandidateStatsReport = activeLocalCandidateStats
     ? standardizedLocalCandidateStatsKeys.reduce(function(report, keyInfo) {
-      var key = keyInfo.ffKey || keyInfo.key;
+      var key = keyInfo.ffKeys && keyInfo.ffKeys.find(function(key) {
+        return key in activeLocalCandidateStats;
+      }) || keyInfo.key;
       report[keyInfo.key] = typeof activeLocalCandidateStats[key] === keyInfo.type
         ? key === 'candidateType'
           ? candidateTypes[activeLocalCandidateStats[key]] || activeLocalCandidateStats[key]
@@ -11938,7 +11921,9 @@ function standardizeFirefoxActiveIceCandidatePairStats(stats) {
 
   var standardizedRemoteCandidateStatsReport = activeRemoteCandidateStats
     ? standardizedCandidateStatsKeys.reduce(function(report, keyInfo) {
-      var key = keyInfo.ffKey || keyInfo.key;
+      var key = keyInfo.ffKeys && keyInfo.ffKeys.find(function(key) {
+        return key in activeRemoteCandidateStats;
+      }) || keyInfo.key;
       report[keyInfo.key] = typeof activeRemoteCandidateStats[key] === keyInfo.type
         ? key === 'candidateType'
           ? candidateTypes[activeRemoteCandidateStats[key]] || activeRemoteCandidateStats[key]
@@ -11990,7 +11975,13 @@ function standardizeFirefoxActiveIceCandidatePairStats(stats) {
  */
 function getTracks(peerConnection, kind, localOrRemote) {
   var getSendersOrReceivers = localOrRemote === 'local' ? 'getSenders' : 'getReceivers';
-  if (peerConnection[getSendersOrReceivers]) {
+  // NOTE(mmalavalli): In Electron 2.x (Chrome 61), if the remote peer adds a second
+  // MediaStreamTrack after completing the negotiation for the first MediaStreamTrack,
+  // then the array returned by RTCPeerConnection.getReceivers() will contain only
+  // the RTCRtpReceiver for the first MediaStreamTrack. In order to work around this,
+  // we construct the array of remote MediaStreamTracks using
+  // RTCPeerConnection.getRemoteStreams() instead.
+  if (peerConnection[getSendersOrReceivers] && !(chromeMajorVersion && chromeMajorVersion < 66)) {
     return peerConnection[getSendersOrReceivers]().map(function(senderOrReceiver) {
       return senderOrReceiver.track;
     }).filter(function(track) {
@@ -12014,28 +12005,44 @@ function getTracks(peerConnection, kind, localOrRemote) {
 function getTrackStats(peerConnection, track, options) {
   options = options || {};
 
-  if (typeof options.testForChrome !== 'undefined' ||
-    typeof webkitRTCPeerConnection !== 'undefined') {
-    return chromeGetTrackStats(peerConnection, track);
+  if (typeof options.testForChrome !== 'undefined' || isChrome) {
+    return chromeOrSafariGetTrackStats(peerConnection, track);
   }
-  if (typeof options.testForFirefox  !== 'undefined' ||
-    typeof mozRTCPeerConnection !== 'undefined') {
-    return firefoxGetTrackStats(peerConnection, track);
+  if (typeof options.testForFirefox  !== 'undefined' || isFirefox) {
+    return firefoxGetTrackStats(peerConnection, track, options.isRemote);
+  }
+  if (typeof options.testForSafari  !== 'undefined' || isSafari) {
+    if (typeof options.testForSafari  !== 'undefined' || sdpFormat === 'unified') {
+      return chromeOrSafariGetTrackStats(peerConnection, track);
+    }
+    // NOTE(syerrapragada): getStats() is not supported on
+    // Safari versions where plan-b is the SDP format
+    // due to this bug: https://bugs.webkit.org/show_bug.cgi?id=192601
+    return Promise.reject(new Error([
+      'getStats() is not supported on this version of Safari',
+      'due to this bug: https://bugs.webkit.org/show_bug.cgi?id=192601'
+    ].join(' ')));
   }
   return Promise.reject(new Error('RTCPeerConnection#getStats() not supported'));
 }
 
 /**
- * Get the standardized statistics for a particular MediaStreamTrack in Chrome.
+ * Get the standardized statistics for a particular MediaStreamTrack in Chrome or Safari.
  * @param {RTCPeerConnection} peerConnection
  * @param {MediaStreamTrack} track
  * @returns {Promise.<StandardizedTrackStatsReport>}
  */
-function chromeGetTrackStats(peerConnection, track) {
+function chromeOrSafariGetTrackStats(peerConnection, track) {
   return new Promise(function(resolve, reject) {
-    peerConnection.getStats(function(response) {
-      resolve(standardizeChromeStats(response, track));
-    }, null, reject);
+    if (chromeMajorVersion && chromeMajorVersion < 67) {
+      peerConnection.getStats(function(response) {
+        resolve(standardizeChromeLegacyStats(response, track));
+      }, null, reject);
+      return;
+    }
+    peerConnection.getStats(track).then(function(response) {
+      resolve(standardizeChromeOrSafariStats(response));
+    }, reject);
   });
 }
 
@@ -12043,23 +12050,24 @@ function chromeGetTrackStats(peerConnection, track) {
  * Get the standardized statistics for a particular MediaStreamTrack in Firefox.
  * @param {RTCPeerConnection} peerConnection
  * @param {MediaStreamTrack} track
+ * @param {boolean} isRemote
  * @returns {Promise.<StandardizedTrackStatsReport>}
  */
-function firefoxGetTrackStats(peerConnection, track) {
+function firefoxGetTrackStats(peerConnection, track, isRemote) {
   return new Promise(function(resolve, reject) {
     peerConnection.getStats(track).then(function(response) {
-      resolve(standardizeFirefoxStats(response));
+      resolve(standardizeFirefoxStats(response, isRemote));
     }, reject);
   });
 }
 
 /**
- * Standardize the MediaStreamTrack's statistics in Chrome.
+ * Standardize the MediaStreamTrack's legacy statistics in Chrome.
  * @param {RTCStatsResponse} response
  * @param {MediaStreamTrack} track
  * @returns {StandardizedTrackStatsReport}
  */
-function standardizeChromeStats(response, track) {
+function standardizeChromeLegacyStats(response, track) {
   var ssrcReport = response.result().find(function(report) {
     return report.type === 'ssrc' && report.stat('googTrackId') === track.id;
   });
@@ -12128,38 +12136,41 @@ function standardizeChromeStats(response, track) {
 }
 
 /**
- * Standardize the MediaStreamTrack's statistics in Firefox.
+ * Standardize the MediaStreamTrack's statistics in Chrome or Safari.
  * @param {RTCStatsReport} response
  * @returns {StandardizedTrackStatsReport}
  */
-function standardizeFirefoxStats(response) {
-  // NOTE(mroberts): If getStats is called on a closed RTCPeerConnection,
-  // Firefox returns undefined instead of an RTCStatsReport. We workaround this
-  // here. See the following bug for more details:
-  //
-  //   https://bugzilla.mozilla.org/show_bug.cgi?id=1377225
-  //
-  response = response || new Map();
+function standardizeChromeOrSafariStats(response) {
+  var inbound = null;
+  var outbound = null;
+  var track = null;
+  var codec = null;
 
-  var inbound = Array.from(response.values()).find(function(stat) {
-    return stat.type === 'inbound-rtp';
+  response.forEach(function(stat) {
+    switch (stat.type) {
+      case 'inbound-rtp':
+        inbound = stat;
+        break;
+      case 'outbound-rtp':
+        outbound = stat;
+        break;
+      case 'track':
+        track = stat;
+        break;
+      case 'codec':
+        codec = stat;
+        break;
+    }
   });
 
-  var outbound = Array.from(response.values()).find(function(stat) {
-    return stat.type === 'outbound-rtp';
-  });
-
+  var isRemote = track && track.remoteSource;
   var standardizedStats = {};
 
+  var first = isRemote ? inbound : outbound;
+  var second = track;
+  var third = codec;
+
   function getStatValue(name) {
-    var first = outbound;
-    var second = inbound;
-
-    if (outbound && outbound.isRemote) {
-      first = inbound;
-      second = outbound;
-    }
-
     if (first && typeof first[name] !== 'undefined') {
       return first[name];
     }
@@ -12168,15 +12179,160 @@ function standardizeFirefoxStats(response) {
       return second[name];
     }
 
+    if (third && typeof third[name] !== 'undefined') {
+      return third[name];
+    }
+
     return null;
+  }
+
+  var ssrc = getStatValue('ssrc');
+  if (typeof ssrc === 'number') {
+    standardizedStats.ssrc = String(ssrc);
   }
 
   var timestamp = getStatValue('timestamp');
   standardizedStats.timestamp = Math.round(timestamp);
 
+  var mimeType = getStatValue('mimeType');
+  if (typeof mimeType === 'string') {
+    mimeType = mimeType.split('/');
+    standardizedStats.codecName = mimeType[mimeType.length - 1];
+  }
+
+  var roundTripTime = getStatValue('roundTripTime');
+  if (typeof roundTripTime === 'number') {
+    standardizedStats.roundTripTime = roundTripTime;
+  }
+
+  var jitter = getStatValue('jitter');
+  if (typeof jitter === 'number') {
+    standardizedStats.jitter = Math.round(jitter * 1000);
+  }
+
+  var frameWidth = getStatValue('frameWidth');
+  if (typeof frameWidth === 'number') {
+    if (isRemote) {
+      standardizedStats.frameWidthReceived = frameWidth;
+    } else {
+      standardizedStats.frameWidthSent = frameWidth;
+    }
+  }
+
+  var frameHeight = getStatValue('frameHeight');
+  if (typeof frameHeight === 'number') {
+    if (isRemote) {
+      standardizedStats.frameHeightReceived = frameHeight;
+    } else {
+      standardizedStats.frameHeightSent = frameHeight;
+    }
+  }
+
+  var framesPerSecond = getStatValue('framesPerSecond');
+  if (typeof framesPerSecond === 'number') {
+    standardizedStats.frameRateSent = framesPerSecond;
+  }
+
+  var bytesReceived = getStatValue('bytesReceived');
+  if (typeof bytesReceived === 'number') {
+    standardizedStats.bytesReceived = bytesReceived;
+  }
+
+  var bytesSent = getStatValue('bytesSent');
+  if (typeof bytesSent === 'number') {
+    standardizedStats.bytesSent = bytesSent;
+  }
+
+  var packetsLost = getStatValue('packetsLost');
+  if (typeof packetsLost === 'number') {
+    standardizedStats.packetsLost = packetsLost;
+  }
+
+  var packetsReceived = getStatValue('packetsReceived');
+  if (typeof packetsReceived === 'number') {
+    standardizedStats.packetsReceived = packetsReceived;
+  }
+
+  var packetsSent = getStatValue('packetsSent');
+  if (typeof packetsSent === 'number') {
+    standardizedStats.packetsSent = packetsSent;
+  }
+
+  var audioLevel = getStatValue('audioLevel');
+  if (typeof audioLevel === 'number') {
+    if (isRemote) {
+      standardizedStats.audioOutputLevel = audioLevel;
+    } else {
+      standardizedStats.audioInputLevel = audioLevel;
+    }
+  }
+
+  return standardizedStats;
+}
+
+/**
+ * Standardize the MediaStreamTrack's statistics in Firefox.
+ * @param {RTCStatsReport} response
+ * @param {boolean} isRemote
+ * @returns {StandardizedTrackStatsReport}
+ */
+function standardizeFirefoxStats(response, isRemote) {
+  // NOTE(mroberts): If getStats is called on a closed RTCPeerConnection,
+  // Firefox returns undefined instead of an RTCStatsReport. We workaround this
+  // here. See the following bug for more details:
+  //
+  //   https://bugzilla.mozilla.org/show_bug.cgi?id=1377225
+  //
+  response = response || new Map();
+
+  var inbound = null;
+  var outbound = null;
+
+  // NOTE(mmalavalli): Starting from Firefox 63, RTC{Inbound, Outbound}RTPStreamStats.isRemote
+  // will be deprecated, followed by its removal in Firefox 66. Also, trying to
+  // access members of the remote RTC{Inbound, Outbound}RTPStreamStats without
+  // using RTCStatsReport.get(remoteId) will trigger console warnings. So, we
+  // no longer depend on "isRemote", and we call RTCStatsReport.get(remoteId)
+  // to access the remote RTC{Inbound, Outbound}RTPStreamStats.
+  //
+  // Source: https://blog.mozilla.org/webrtc/getstats-isremote-65/
+  //
+  response.forEach(function(stat) {
+    if (stat.isRemote) {
+      return;
+    }
+    switch (stat.type) {
+      case 'inbound-rtp':
+        inbound = stat;
+        outbound = response.get(stat.remoteId);
+        break;
+      case 'outbound-rtp':
+        outbound = stat;
+        inbound = response.get(stat.remoteId);
+        break;
+    }
+  });
+
+  var first = isRemote ? inbound : outbound;
+  var second = isRemote ? outbound : inbound;
+
+  function getStatValue(name) {
+    if (first && typeof first[name] !== 'undefined') {
+      return first[name];
+    }
+    if (second && typeof second[name] !== 'undefined') {
+      return second[name];
+    }
+    return null;
+  }
+
+  var standardizedStats = {};
+  var timestamp = getStatValue('timestamp');
+  standardizedStats.timestamp = Math.round(timestamp);
+
   var ssrc = getStatValue('ssrc');
-  if (typeof ssrc === 'string') {
-    standardizedStats.ssrc = ssrc;
+  if (typeof ssrc === 'number') {
+    standardizedStats.ssrc = String(ssrc);
   }
 
   var bytesSent = getStatValue('bytesSent');
@@ -12194,7 +12350,7 @@ function standardizeFirefoxStats(response) {
     standardizedStats.packetsSent = packetsSent;
   }
 
-  var roundTripTime = getStatValue('mozRtt');
+  var roundTripTime = getStatValue('roundTripTime');
   if (typeof roundTripTime === 'number') {
     standardizedStats.roundTripTime = roundTripTime;
   }
@@ -12226,7 +12382,6 @@ function standardizeFirefoxStats(response) {
 
   return standardizedStats;
 }
-
 
 /**
  * Standardized RTCIceCandidate statistics.
@@ -12313,7 +12468,7 @@ function standardizeFirefoxStats(response) {
 
 module.exports = getStats;
 
-},{"./util":54}],40:[function(require,module,exports){
+},{"./util":54,"./util/sdp":56}],40:[function(require,module,exports){
 'use strict';
 
 /**
@@ -12393,12 +12548,10 @@ Object.defineProperties(WebRTC, {
 module.exports = WebRTC;
 
 },{"../package.json":57,"./getstats":39,"./getusermedia":40,"./mediastream":42,"./mediastreamtrack":43,"./rtcicecandidate":44,"./rtcpeerconnection":47,"./rtcsessiondescription":52}],42:[function(require,module,exports){
-/* globals webkitMediaStream, MediaStream */
+/* globals MediaStream */
 'use strict';
 
-if (typeof webkitMediaStream !== 'undefined') {
-  module.exports = webkitMediaStream;
-} else if (typeof MediaStream !== 'undefined') {
+if (typeof MediaStream !== 'undefined') {
   module.exports = MediaStream;
 } else {
   module.exports = function MediaStream() {
@@ -12433,7 +12586,7 @@ if (typeof RTCIceCandidate !== 'undefined') {
 }
 
 },{}],45:[function(require,module,exports){
-/* globals RTCDataChannel, RTCSessionDescription, webkitRTCPeerConnection */
+/* globals RTCDataChannel, RTCPeerConnection, RTCSessionDescription */
 'use strict';
 
 var ChromeRTCSessionDescription = require('../rtcsessiondescription/chrome');
@@ -12445,9 +12598,7 @@ var RTCRtpSenderShim = require('../rtcrtpsender');
 var sdpUtils = require('../util/sdp');
 var util = require('../util');
 
-var PeerConnection = typeof RTCPeerConnection !== 'undefined'
-  ? RTCPeerConnection
-  : webkitRTCPeerConnection;
+var sdpFormat = sdpUtils.getSdpFormat();
 
 // NOTE(mroberts): This class wraps Chrome's RTCPeerConnection implementation.
 // It provides some functionality not currently present in Chrome, namely the
@@ -12467,27 +12618,15 @@ function ChromeRTCPeerConnection(configuration, constraints) {
 
   EventTarget.call(this);
 
-  // NOTE(mhuynh): See
-  // https://webrtc.org/web-apis/chrome/unified-plan/
-  // for transition from 'plan-b' default to 'unified-plan' as default.
-  var newConfiguration = Object.assign({ sdpSemantics: 'plan-b' }, configuration);
-  if (newConfiguration.iceTransportPolicy) {
-    newConfiguration.iceTransports = newConfiguration.iceTransportPolicy;
-  }
+  configuration = configuration || {};
+  var newConfiguration = Object.assign(configuration.iceTransportPolicy
+    ? { iceTransports: configuration.iceTransportPolicy }
+    : {}, { sdpSemantics: 'plan-b' }, configuration);
 
   util.interceptEvent(this, 'datachannel');
   util.interceptEvent(this, 'signalingstatechange');
 
-  // NOTE(mmalavalli): Because of a bug related to "ontrack", we prevent it
-  // from being delegated to ChromeRTCPeerConnection. For now, this bug
-  // manifests when we run Chrome with the flag: --enable-blink-features=RTCRtpSender
-  // Existing bug: https://bugs.chromium.org/p/chromium/issues/detail?id=774303
-  // Bug filed by us: https://bugs.chromium.org/p/chromium/issues/detail?id=783433
-  util.interceptEvent(this, 'track');
-
-  /* eslint new-cap:0 */
-  var peerConnection = new PeerConnection(newConfiguration, constraints);
-  var sdpSemantics = getSdpSemantics(newConfiguration.sdpSemantics);
+  var peerConnection = new RTCPeerConnection(newConfiguration, constraints);
 
   Object.defineProperties(this, {
     _localStream: {
@@ -12503,9 +12642,6 @@ function ChromeRTCPeerConnection(configuration, constraints) {
     _pendingRemoteOffer: {
       value: null,
       writable: true
-    },
-    _sdpSemantics: {
-      value: sdpSemantics
     },
     _senders: {
       value: new Map()
@@ -12543,6 +12679,14 @@ function ChromeRTCPeerConnection(configuration, constraints) {
 
   var self = this;
 
+  if (sdpFormat === 'planb') {
+    // NOTE(mmalavalli): Because of a bug related to "ontrack" in Chrome 63 and below,
+    // we prevent it from being delegated to ChromeRTCPeerConnection.
+    // Existing bug: https://bugs.chromium.org/p/chromium/issues/detail?id=774303
+    // Bug filed by us: https://bugs.chromium.org/p/chromium/issues/detail?id=783433
+    util.interceptEvent(this, 'track');
+  }
+
   peerConnection.addEventListener('datachannel', function ondatachannel(event) {
     shimDataChannel(event.channel);
     self.dispatchEvent(event);
@@ -12559,8 +12703,10 @@ function ChromeRTCPeerConnection(configuration, constraints) {
     // the ontrack property of the RTCPeerConnection.
   };
 
-  peerConnection.addStream(this._localStream);
-  util.proxyProperties(PeerConnection.prototype, this, peerConnection);
+  if (!RTCPeerConnection.prototype.addTrack) {
+    peerConnection.addStream(this._localStream);
+  }
+  util.proxyProperties(RTCPeerConnection.prototype, this, peerConnection);
 }
 
 inherits(ChromeRTCPeerConnection, EventTarget);
@@ -12569,23 +12715,35 @@ inherits(ChromeRTCPeerConnection, EventTarget);
 // all MediaStreamTracks to one MediaStream. It has been implemented this
 // keeping in mind that this is to be maintained only until "addTrack" is
 // supported natively in Chrome.
+// NOTE(mmalavalli): This shim also works around a Chrome bug in "unified-plan"
+// SDPs where adding a MediaStreamTrack that was previously added and removed
+// generates an SDP where the MSID does not match the MediaStreamTrack ID.
+//
+// Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=894231
+//
 ChromeRTCPeerConnection.prototype.addTrack = function addTrack() {
   var args = [].slice.call(arguments);
-  if (this._peerConnection.addTrack) {
-    return this._peerConnection.addTrack.apply(this._peerConnection, args);
-  }
-
   var track = args[0];
+  var sender = this._senders.get(track);
+
   if (this._peerConnection.signalingState === 'closed') {
     throw new Error('Cannot add MediaStreamTrack [' + track.id + ', '
       + track.kind + ']: RTCPeerConnection is closed');
   }
-
-  var sender = this._senders.get(track);
   if (sender && sender.track) {
     throw new Error('Cannot add MediaStreamTrack [' + track.id + ', '
       + track.kind + ']: RTCPeerConnection already has it');
   }
+  if (RTCPeerConnection.prototype.addTrack) {
+    if (sdpFormat === 'unified') {
+      sender = getActiveSenders(this._peerConnection).get(track)
+        || this._peerConnection.addTrack.apply(this._peerConnection, args);
+      this._senders.set(track, sender);
+      return sender;
+    }
+    return this._peerConnection.addTrack.apply(this._peerConnection, args);
+  }
+
   this._peerConnection.removeStream(this._localStream);
   this._localStream.addTrack(track);
   this._peerConnection.addStream(this._localStream);
@@ -12595,18 +12753,46 @@ ChromeRTCPeerConnection.prototype.addTrack = function addTrack() {
   return sender;
 };
 
+// NOTE(mmalavalli): This shim works around a Chrome bug in "unified-plan"
+// SDPs where adding a MediaStreamTrack that was previously added and removed
+// generates an SDP where the MSID does not match the MediaStreamTrack ID.
+//
+// Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=894231
+//
+if (RTCPeerConnection.prototype.addTransceiver) {
+  ChromeRTCPeerConnection.prototype.addTransceiver = function addTransceiver() {
+    var transceiver = this._peerConnection.addTransceiver.apply(this._peerConnection, arguments);
+    var sender = transceiver.sender;
+    var track = sender.track;
+    this._senders.set(track, sender);
+    return transceiver;
+  };
+}
+
 // NOTE(mmalavalli): This shim supports our limited case of removing
 // MediaStreamTracks from one MediaStream. It has been implemented this
 // keeping in mind that this is to be maintained only until "removeTrack" is
 // supported natively in Chrome.
+// NOTE(mmalavalli): This shim also works around a Chrome bug in "unified-plan"
+// SDPs where adding a MediaStreamTrack that was previously added and removed
+// generates an SDP where the MSID does not match the MediaStreamTrack ID.
+//
+// Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=894231
+//
 ChromeRTCPeerConnection.prototype.removeTrack = function removeTrack(sender) {
   if (this._peerConnection.signalingState === 'closed') {
     throw new Error('Cannot remove MediaStreamTrack: RTCPeerConnection is closed');
   }
 
-  if (this._peerConnection.removeTrack) {
+  if (RTCPeerConnection.prototype.removeTrack) {
     try {
-      this._peerConnection.removeTrack(sender);
+      if (sdpFormat === 'unified') {
+        if (sender.track) {
+          this._senders.set(sender.track, new RTCRtpSenderShim(null));
+        }
+      } else {
+        this._peerConnection.removeTrack(sender);
+      }
     }
     catch (error) {
       // NOTE(mhuynh): Do nothing.
@@ -12631,10 +12817,9 @@ ChromeRTCPeerConnection.prototype.removeTrack = function removeTrack(sender) {
 };
 
 ChromeRTCPeerConnection.prototype.getSenders = function getSenders() {
-  if (this._peerConnection.getSenders) {
-    return this._peerConnection.getSenders();
-  }
-  return Array.from(this._senders.values());
+  return this._peerConnection.getSenders && sdpFormat === 'planb'
+    ? this._peerConnection.getSenders()
+    : Array.from(this._senders.values());
 };
 
 ChromeRTCPeerConnection.prototype.addIceCandidate = function addIceCandidate(candidate) {
@@ -12678,15 +12863,18 @@ ChromeRTCPeerConnection.prototype.close = function close() {
 ChromeRTCPeerConnection.prototype.createAnswer = function createAnswer() {
   var args = [].slice.call(arguments);
   var promise;
+  var isPlanB = sdpFormat === 'planb';
   var self = this;
 
   if (this._pendingRemoteOffer) {
-    var mediaStreamTracks = util.flatMap(this.getRemoteStreams(), function(mediaStream) {
+    var mediaStreamTracks = isPlanB ? util.flatMap(this.getRemoteStreams(), function(mediaStream) {
       return mediaStream.getTracks();
-    });
+    }) : [];
 
     promise = this._peerConnection.setRemoteDescription(this._pendingRemoteOffer).then(function setRemoteDescriptionSucceeded() {
-      maybeDispatchTrackEvents(self, mediaStreamTracks);
+      if (isPlanB) {
+        maybeDispatchTrackEvents(self, mediaStreamTracks);
+      }
       // NOTE(mroberts): The signalingStates between the ChromeRTCPeerConnection
       // and the underlying RTCPeerConnection implementation have converged. We
       // can unblock any pending calls to addIceCandidate now.
@@ -12694,9 +12882,9 @@ ChromeRTCPeerConnection.prototype.createAnswer = function createAnswer() {
       return self._peerConnection.createAnswer();
     }).then(function createAnswerSucceeded(answer) {
       self._pendingRemoteOffer = null;
-      return new RTCSessionDescription({
+      return new ChromeRTCSessionDescription({
         type: 'answer',
-        sdp: updateTrackIdsToSSRCs(self._sdpSemantics, self._tracksToSSRCs, answer.sdp)
+        sdp: updateTrackIdsToSSRCs(sdpFormat, self._tracksToSSRCs, answer.sdp)
       });
     }, function setRemoteDescriptionOrCreateAnswerFailed(error) {
       self._pendingRemoteOffer = null;
@@ -12704,9 +12892,9 @@ ChromeRTCPeerConnection.prototype.createAnswer = function createAnswer() {
     });
   } else {
     promise = this._peerConnection.createAnswer().then(function(answer) {
-      return new RTCSessionDescription({
+      return new ChromeRTCSessionDescription({
         type: 'answer',
-        sdp: updateTrackIdsToSSRCs(self._sdpSemantics, self._tracksToSSRCs, answer.sdp)
+        sdp: updateTrackIdsToSSRCs(sdpFormat, self._tracksToSSRCs, answer.sdp)
       });
     });
   }
@@ -12724,7 +12912,7 @@ ChromeRTCPeerConnection.prototype.createOffer = function createOffer() {
   var promise = this._peerConnection.createOffer(options).then(function(offer) {
     return new ChromeRTCSessionDescription({
       type: offer.type,
-      sdp: updateTrackIdsToSSRCs(self._sdpSemantics, self._tracksToSSRCs, offer.sdp)
+      sdp: updateTrackIdsToSSRCs(sdpFormat, self._tracksToSSRCs, offer.sdp)
     });
   });
 
@@ -12759,7 +12947,7 @@ ChromeRTCPeerConnection.prototype.setRemoteDescription = function setRemoteDescr
 };
 
 util.delegateMethods(
-  PeerConnection.prototype,
+  RTCPeerConnection.prototype,
   ChromeRTCPeerConnection.prototype,
   '_peerConnection');
 
@@ -12803,19 +12991,19 @@ function setDescription(peerConnection, local, description) {
     }
   }
 
-  var mediaStreamTracks = util.flatMap(peerConnection.getRemoteStreams(), function(mediaStream) {
-    return mediaStream.getTracks();
-  });
-
   var pendingLocalOffer = local ? peerConnection._pendingLocalOffer : peerConnection._pendingRemoteOffer;
   var pendingRemoteOffer = local ? peerConnection._pendingRemoteOffer : peerConnection._pendingLocalOffer;
   var intermediateState = local ? 'have-local-offer' : 'have-remote-offer';
   var setLocalDescription = local ? 'setLocalDescription' : 'setRemoteDescription';
   var promise;
 
+  var isPlanB = sdpFormat === 'planb';
+  var mediaStreamTracks = isPlanB ? util.flatMap(peerConnection.getRemoteStreams(), function(mediaStream) {
+    return mediaStream.getTracks();
+  }) : [];
+
   if (!local && pendingRemoteOffer && description.type === 'answer') {
     promise = setRemoteAnswer(peerConnection, description);
-
   } else if (description.type === 'offer') {
     if (peerConnection.signalingState !== intermediateState && peerConnection.signalingState !== 'stable') {
       // NOTE(mroberts): Error message copied from Firefox.
@@ -12857,24 +13045,26 @@ function setDescription(peerConnection, local, description) {
   }
 
   return promise || peerConnection._peerConnection[setLocalDescription](unwrap(description)).then(function() {
-    if (!local) {
+    if (!local && isPlanB) {
       maybeDispatchTrackEvents(peerConnection, mediaStreamTracks);
     }
   });
 }
 
 function setRemoteAnswer(peerConnection, answer) {
-  var mediaStreamTracks = util.flatMap(peerConnection.getRemoteStreams(), function(mediaStream) {
+  var isPlanB = sdpFormat === 'planb';
+  var mediaStreamTracks = isPlanB ? util.flatMap(peerConnection.getRemoteStreams(), function(mediaStream) {
     return mediaStream.getTracks();
-  });
-
+  }) : [];
   // Apply the pending local offer.
   var pendingLocalOffer = peerConnection._pendingLocalOffer;
   return peerConnection._peerConnection.setLocalDescription(pendingLocalOffer).then(function setLocalOfferSucceeded() {
     peerConnection._pendingLocalOffer = null;
     return peerConnection.setRemoteDescription(answer);
   }).then(function setRemoteAnswerSucceeded() {
-    maybeDispatchTrackEvents(peerConnection, mediaStreamTracks);
+    if (isPlanB) {
+      maybeDispatchTrackEvents(peerConnection, mediaStreamTracks);
+    }
     // NOTE(mroberts): The signalingStates between the ChromeRTCPeerConnection
     // and the underlying RTCPeerConnection implementation have converged. We
     // can unblock any pending calls to addIceCandidate now.
@@ -12945,35 +13135,37 @@ function shimDataChannel(dataChannel) {
 }
 
 /**
- * Get the actual `sdpSemantics`.
- * @param {SdpSemantics} sdpSemantics
- * @returns {SdpSemantics}
+ * Gets the active RTCRtpSenders of the RTCPeerConnection.
+ * @param peerConnection
+ * @returns {Map<MediaStreamTrack, RTCRtpSender>}
  */
-function getSdpSemantics(sdpSemantics) {
-  return sdpUtils.checkIfSdpSemanticsIsSupported()
-    ? sdpSemantics
-    : 'plan-b';
+function getActiveSenders(peerConnection) {
+  return new Map(peerConnection.getSenders().filter(function(sender) {
+    return sender.track;
+  }).map(function(sender) {
+    return [sender.track, sender];
+  }));
 }
 
 /**
  * Update the mappings from MediaStreamTrack IDs to SSRCs as indicated by both
  * the Map from MediaStreamTrack IDs to SSRCs and the SDP itself. This method
  * ensures that SSRCs never change once announced.
- * @param {SdpSemantics} sdpSemantics
- * @param {Map<string, Set<string>>} trackIdsToSSRCs
+ * @param {'planb'|'unified'} sdpFormat
+ * @param {Map<string, Set<string>>} tracksToSSRCs
  * @param {string} sdp - an SDP whose format is determined by `sdpSemantics`
  * @returns {string} updatedSdp - updated SDP
  */
-function updateTrackIdsToSSRCs(sdpSemantics, tracksToSSRCs, sdp) {
-  return sdpSemantics === 'unified-plan'
+function updateTrackIdsToSSRCs(sdpFormat, tracksToSSRCs, sdp) {
+  return sdpFormat === 'unified'
     ? sdpUtils.updateUnifiedPlanTrackIdsToSSRCs(tracksToSSRCs, sdp)
     : sdpUtils.updatePlanBTrackIdsToSSRCs(tracksToSSRCs, sdp);
 }
 
 module.exports = ChromeRTCPeerConnection;
 
-},{"../mediastream":42,"../rtcrtpsender":49,"../rtcsessiondescription/chrome":50,"../util":54,"../util/eventtarget":53,"../util/latch":55,"../util/sdp":56,"util":181}],46:[function(require,module,exports){
-/* globals mozRTCPeerConnection, RTCPeerConnection */
+},{"../mediastream":42,"../rtcrtpsender":49,"../rtcsessiondescription/chrome":50,"../util":54,"../util/eventtarget":53,"../util/latch":55,"../util/sdp":56,"util":192}],46:[function(require,module,exports){
+/* globals RTCPeerConnection */
 'use strict';
 
 var EventTarget = require('../util/eventtarget');
@@ -12982,10 +13174,6 @@ var RTCRtpSenderShim = require('../rtcrtpsender');
 var inherits = require('util').inherits;
 var updateTracksToSSRCs = require('../util/sdp').updateUnifiedPlanTrackIdsToSSRCs;
 var util = require('../util');
-
-var PeerConnection = typeof RTCPeerConnection !== 'undefined'
-  ? RTCPeerConnection
-  : mozRTCPeerConnection;
 
 // NOTE(mroberts): This is a short-lived workaround. Checking the user agent
 // string might not fix every affected Firefox instance, but it should be good
@@ -13024,7 +13212,7 @@ function FirefoxRTCPeerConnection(configuration) {
   util.interceptEvent(this, 'signalingstatechange');
 
   /* eslint new-cap:0 */
-  var peerConnection = new PeerConnection(configuration);
+  var peerConnection = new RTCPeerConnection(configuration);
 
   Object.defineProperties(this, {
     _initiallyNegotiatedDtlsRole: {
@@ -13088,7 +13276,7 @@ function FirefoxRTCPeerConnection(configuration) {
     }
   });
 
-  util.proxyProperties(PeerConnection.prototype, this, peerConnection);
+  util.proxyProperties(RTCPeerConnection.prototype, this, peerConnection);
 }
 
 inherits(FirefoxRTCPeerConnection, EventTarget);
@@ -13128,7 +13316,7 @@ FirefoxRTCPeerConnection.prototype.addTrack = function addTrack() {
   return sender;
 };
 
-if (PeerConnection.prototype.addTransceiver) {
+if (RTCPeerConnection.prototype.addTransceiver) {
   FirefoxRTCPeerConnection.prototype.addTransceiver = function addTransceiver() {
     var transceiver = this._peerConnection.addTransceiver.apply(this._peerConnection, arguments);
     var sender = transceiver.sender;
@@ -13292,7 +13480,7 @@ FirefoxRTCPeerConnection.prototype.close = function close() {
 };
 
 util.delegateMethods(
-  PeerConnection.prototype,
+  RTCPeerConnection.prototype,
   FirefoxRTCPeerConnection.prototype,
   '_peerConnection');
 
@@ -13381,7 +13569,7 @@ function getActiveSenders(peerConnection) {
 
 module.exports = FirefoxRTCPeerConnection;
 
-},{"../rtcrtpsender":49,"../rtcsessiondescription/firefox":51,"../util":54,"../util/eventtarget":53,"../util/sdp":56,"util":181}],47:[function(require,module,exports){
+},{"../rtcrtpsender":49,"../rtcsessiondescription/firefox":51,"../util":54,"../util/eventtarget":53,"../util/sdp":56,"util":192}],47:[function(require,module,exports){
 'use strict';
 
 var guessBrowser = require('../util').guessBrowser;
@@ -13411,8 +13599,14 @@ var EventTarget = require('../util/eventtarget');
 var inherits = require('util').inherits;
 var Latch = require('../util/latch');
 var RTCRtpSenderShim = require('../rtcrtpsender');
-var updateTracksToSSRCs = require('../util/sdp').updatePlanBTrackIdsToSSRCs;
+var sdpUtils = require('../util/sdp');
 var util = require('../util');
+
+var isUnifiedPlan = sdpUtils.getSdpFormat() === 'unified';
+
+var updateTrackIdsToSSRCs = isUnifiedPlan
+  ? sdpUtils.updateUnifiedPlanTrackIdsToSSRCs
+  : sdpUtils.updatePlanBTrackIdsToSSRCs;
 
 function SafariRTCPeerConnection(configuration) {
   if (!(this instanceof SafariRTCPeerConnection)) {
@@ -13424,6 +13618,7 @@ function SafariRTCPeerConnection(configuration) {
   util.interceptEvent(this, 'datachannel');
   util.interceptEvent(this, 'iceconnectionstatechange');
   util.interceptEvent(this, 'signalingstatechange');
+  util.interceptEvent(this, 'track');
 
   var peerConnection = new RTCPeerConnection(configuration);
 
@@ -13460,16 +13655,10 @@ function SafariRTCPeerConnection(configuration) {
       value: null,
       writable: true
     },
-    // NOTE(mroberts): Keep this here until the following is fixed.
-    //
-    //   https://bugs.webkit.org/show_bug.cgi?id=174323
-    //
     localDescription: {
       enumerable: true,
       get: function() {
-        return this._isClosed
-          ? null
-          : this._pendingLocalOffer || this._peerConnection.localDescription;
+        return this._pendingLocalOffer || this._peerConnection.localDescription;
       }
     },
     iceConnectionState: {
@@ -13491,9 +13680,7 @@ function SafariRTCPeerConnection(configuration) {
     remoteDescription: {
       enumerable: true,
       get: function() {
-        return this._isClosed
-          ? null
-          : this._pendingRemoteOffer || this._peerConnection.remoteDescription;
+        return this._pendingRemoteOffer || this._peerConnection.remoteDescription;
       }
     },
     signalingState: {
@@ -13534,6 +13721,15 @@ function SafariRTCPeerConnection(configuration) {
     }
   });
 
+  // NOTE(syerrapragada): This ensures that SafariRTCPeerConnection's "remoteDescription", when accessed
+  // in an RTCTrackEvent listener, will point to the underlying RTCPeerConnection's
+  // "remoteDescription". Before this fix, this was still pointing to "_pendingRemoteOffer"
+  // even though a new remote RTCSessionDescription had already been applied.
+  peerConnection.addEventListener('track', function ontrack(event) {
+    self._pendingRemoteOffer = null;
+    self.dispatchEvent(event);
+  });
+
   util.proxyProperties(RTCPeerConnection.prototype, this, peerConnection);
 }
 
@@ -13555,20 +13751,32 @@ SafariRTCPeerConnection.prototype.createOffer = function createOffer(options) {
 
   // NOTE(mroberts): In general, this is not the way to do this; however, it's
   // good enough for our application.
-  if (options.offerToReceiveAudio && !this._audioTransceiver) {
+  if (options.offerToReceiveAudio && !this._audioTransceiver && !(isUnifiedPlan && hasReceiversForTracksOfKind(this, 'audio'))) {
     delete options.offerToReceiveAudio;
-    this._audioTransceiver = this.addTransceiver('audio');
+    try {
+      this._audioTransceiver = isUnifiedPlan
+        ? this.addTransceiver('audio', { direction: 'recvonly' })
+        : this.addTransceiver('audio');
+    } catch (e) {
+      return Promise.reject(e);
+    }
   }
 
-  if (options.offerToReceiveVideo && !this._videoTransceiver) {
+  if (options.offerToReceiveVideo && !this._videoTransceiver && !(isUnifiedPlan && hasReceiversForTracksOfKind(this, 'video'))) {
     delete options.offerToReceiveVideo;
-    this._videoTransceiver = this.addTransceiver('video');
+    try {
+      this._videoTransceiver = isUnifiedPlan
+        ? this.addTransceiver('video', { direction: 'recvonly' })
+        : this.addTransceiver('video');
+    } catch (e) {
+      return Promise.reject(e);
+    }
   }
 
   return this._peerConnection.createOffer(options).then(function(offer) {
     return new RTCSessionDescription({
       type: offer.type,
-      sdp: updateTracksToSSRCs(self._tracksToSSRCs, offer.sdp)
+      sdp: updateTrackIdsToSSRCs(self._tracksToSSRCs, offer.sdp)
     });
   });
 };
@@ -13582,14 +13790,22 @@ SafariRTCPeerConnection.prototype.createAnswer = function createAnswer(options) 
       return self._peerConnection.createAnswer();
     }).then(function createAnswerSucceeded(answer) {
       self._pendingRemoteOffer = null;
-      return answer;
+      return isUnifiedPlan ? new RTCSessionDescription({
+        type: answer.type,
+        sdp: updateTrackIdsToSSRCs(self._tracksToSSRCs, answer.sdp)
+      }) : answer;
     }, function setRemoteDescriptionOrCreateAnswerFailed(error) {
       self._pendingRemoteOffer = null;
       throw error;
     });
   }
 
-  return this._peerConnection.createAnswer(options);
+  return this._peerConnection.createAnswer(options).then(function(answer) {
+    return isUnifiedPlan ? new RTCSessionDescription({
+      type: answer.type,
+      sdp: updateTrackIdsToSSRCs(self._tracksToSSRCs, answer.sdp)
+    }) : answer;
+  });
 };
 
 SafariRTCPeerConnection.prototype.createDataChannel = function createDataChannel(label, dataChannelDict) {
@@ -13645,10 +13861,32 @@ SafariRTCPeerConnection.prototype.addTrack = function addTrack() {
   return sender;
 };
 
+// NOTE(mmalavalli): This shim works around a Safari bug in "unified-plan"
+// SDPs where adding a MediaStreamTrack that was previously added and removed
+// generates an SDP where the MSID does not match the MediaStreamTrack ID.
+//
+// Safari bug: https://bugs.webkit.org/show_bug.cgi?id=192101
+//
+if (RTCPeerConnection.prototype.addTransceiver) {
+  SafariRTCPeerConnection.prototype.addTransceiver = function addTransceiver() {
+    var transceiver = this._peerConnection.addTransceiver.apply(this._peerConnection, arguments);
+    var sender = transceiver.sender;
+    var track = sender.track;
+    this._senders.set(track, sender);
+    return transceiver;
+  };
+}
+
 // NOTE(mroberts): We can't really remove tracks right now, at least if we
 // ever want to add them back...
 //
 //     https://bugs.webkit.org/show_bug.cgi?id=174327
+//
+// NOTE(mmalavalli): This shim also works around a Safari bug in "unified-plan"
+// SDPs where adding a MediaStreamTrack that was previously added and removed
+// generates an SDP where the MSID does not match the MediaStreamTrack ID.
+//
+// Safari bug: https://bugs.webkit.org/show_bug.cgi?id=192101
 //
 SafariRTCPeerConnection.prototype.removeTrack = function removeTrack(sender) {
   if (this._isClosed) {
@@ -13746,6 +13984,19 @@ function setRemoteAnswer(peerConnection, answer) {
 }
 
 /**
+ * Whether a SafariRTCPeerConnection has any RTCRtpReceivers(s) for the given
+ * MediaStreamTrack kind.
+ * @param {SafariRTCPeerConnection} peerConnection
+ * @param {'audio' | 'video'} kind
+ * @returns {boolean}
+ */
+function hasReceiversForTracksOfKind(peerConnection, kind) {
+  return !!peerConnection.getTransceivers().find(function(transceiver) {
+    return transceiver.receiver && transceiver.receiver.track && transceiver.receiver.track.kind === kind;
+  });
+}
+
+/**
  * Shim an RTCDataChannel. This function mutates the RTCDataChannel.
  * @param {RTCDataChannel} dataChannel
  * @returns {RTCDataChannel}
@@ -13780,7 +14031,7 @@ function getActiveSenders(peerConnection) {
 
 module.exports = SafariRTCPeerConnection;
 
-},{"../rtcrtpsender":49,"../util":54,"../util/eventtarget":53,"../util/latch":55,"../util/sdp":56,"util":181}],49:[function(require,module,exports){
+},{"../rtcrtpsender":49,"../util":54,"../util/eventtarget":53,"../util/latch":55,"../util/sdp":56,"util":192}],49:[function(require,module,exports){
 'use strict';
 
 /**
@@ -14042,15 +14293,16 @@ function flatMap(list, mapFn) {
  * @returns {?string} browser - "chrome", "firefox", "safari", or null
  */
 function guessBrowser() {
-  if (typeof webkitRTCPeerConnection !== 'undefined') {
-    return 'chrome';
-  } else if (typeof mozRTCPeerConnection !== 'undefined') {
-    return 'firefox';
-  } else if (typeof RTCPeerConnection !== 'undefined') {
-    if (typeof navigator !== 'undefined' && navigator.userAgent.match(/AppleWebKit\/(\d+)\./)) {
+  if (typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string') {
+    if (/Chrome/.test(navigator.userAgent)) {
+      return 'chrome';
+    }
+    if (/Firefox/.test(navigator.userAgent)) {
+      return 'firefox';
+    }
+    if (/Safari/.test(navigator.userAgent)) {
       return 'safari';
     }
-    // NOTE(mroberts): Could be Edge.
   }
   return null;
 }
@@ -14294,9 +14546,82 @@ function createUnreachableStateError(from, to) {
 module.exports = Latch;
 
 },{"./":54}],56:[function(require,module,exports){
+/* globals RTCPeerConnection, RTCRtpTransceiver */
 'use strict';
 
 var flatMap = require('./').flatMap;
+var guessBrowser = require('./').guessBrowser;
+
+// NOTE(mmalavalli): We cache Chrome's sdpSemantics support in order to prevent
+// instantiation of more than one RTCPeerConnection.
+var isSdpSemanticsSupported;
+
+/**
+ * Check if Chrome supports specifying sdpSemantics for an RTCPeerConnection.
+ * @return {boolean}
+ */
+function checkIfSdpSemanticsIsSupported() {
+  if (typeof isSdpSemanticsSupported === 'boolean') {
+    return isSdpSemanticsSupported;
+  }
+  if (typeof RTCPeerConnection === 'undefined') {
+    isSdpSemanticsSupported = false;
+    return isSdpSemanticsSupported;
+  }
+  try {
+    new RTCPeerConnection({ sdpSemantics: 'foo' });
+    isSdpSemanticsSupported = false;
+  } catch (e) {
+    isSdpSemanticsSupported = true;
+  }
+  return isSdpSemanticsSupported;
+}
+
+// NOTE(mmalavalli): We cache Chrome's SDP format in order to prevent
+// instantiation of more than one RTCPeerConnection.
+var chromeSdpFormat;
+
+/**
+ * Get Chrome's default SDP format.
+ * @returns {'planb'|'unified'}
+ */
+function getChromeSdpFormat() {
+  if (typeof chromeSdpFormat === 'string') {
+    return chromeSdpFormat;
+  }
+  if (checkIfSdpSemanticsIsSupported()) {
+    chromeSdpFormat = 'planb';
+    return chromeSdpFormat;
+  }
+  chromeSdpFormat = typeof RTCPeerConnection !== 'undefined'
+  && 'addStream' in RTCPeerConnection.prototype
+    ? 'planb'
+    : 'unified';
+  return chromeSdpFormat;
+}
+
+/**
+ * Get Safari's default SDP format.
+ * @returns {'planb'|'unified'}
+ */
+function getSafariSdpFormat() {
+  return typeof RTCRtpTransceiver !== 'undefined'
+  && 'currentDirection' in RTCRtpTransceiver.prototype
+    ? 'unified'
+    : 'planb';
+}
+
+/**
+ * Get the browser's default SDP format.
+ * @returns {'planb'|'unified'}
+ */
+function getSdpFormat() {
+  return {
+    chrome: getChromeSdpFormat(),
+    firefox: 'unified',
+    safari: getSafariSdpFormat()
+  }[guessBrowser()] || null;
+}
 
 /**
  * Match a pattern across lines, returning the first capture group for any
@@ -14502,33 +14827,7 @@ function updateUnifiedPlanTrackIdsToSSRCs(trackIdsToSSRCs, sdp) {
   return updateTrackIdsToSSRCs(getUnifiedPlanTrackIdsToSSRCs, trackIdsToSSRCs, sdp);
 }
 
-// NOTE(mroberts): We need to cache this result so that we don't create too many
-// RTCPeerConnections.
-var sdpSemanticsIsSupported;
-
-/**
- * Check whether or not `sdpSemantics` is supported.
- * @returns {boolean}
- */
-function checkIfSdpSemanticsIsSupported() {
-  if (typeof sdpSemanticsIsSupported === 'boolean') {
-    return sdpSemanticsIsSupported;
-  }
-  if (typeof RTCPeerConnection === 'undefined') {
-    sdpSemanticsIsSupported = false;
-    return sdpSemanticsIsSupported;
-  }
-  try {
-    new RTCPeerConnection({ sdpSemantics: 'bogus' });
-    sdpSemanticsIsSupported = false;
-    return sdpSemanticsIsSupported;
-  } catch (error) {
-    sdpSemanticsIsSupported = true;
-    return sdpSemanticsIsSupported;
-  }
-}
-
-exports.checkIfSdpSemanticsIsSupported = checkIfSdpSemanticsIsSupported;
+exports.getSdpFormat = getSdpFormat;
 exports.getMediaSections = getMediaSections;
 exports.getPlanBTrackIds = getPlanBTrackIds;
 exports.getUnifiedPlanTrackIds = getUnifiedPlanTrackIds;
@@ -14539,50 +14838,40 @@ exports.updateUnifiedPlanTrackIdsToSSRCs = updateUnifiedPlanTrackIdsToSSRCs;
 
 },{"./":54}],57:[function(require,module,exports){
 module.exports={
-  "_from": "@twilio/webrtc@^2.1.3",
-  "_id": "@twilio/webrtc@2.1.3",
-  "_inBundle": false,
-  "_integrity": "sha512-K3/Ttlj2alDW8jw41Qpc0LPkK4w36DplXA2uTs+mjIyY9cFkn2OdavMo0mZ7iuzau0clmj28fc8l50nGSD0KCQ==",
-  "_location": "/@twilio/webrtc",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "range",
-    "registry": true,
-    "raw": "@twilio/webrtc@^2.1.3",
-    "name": "@twilio/webrtc",
-    "escapedName": "@twilio%2fwebrtc",
-    "scope": "@twilio",
-    "rawSpec": "^2.1.3",
-    "saveSpec": null,
-    "fetchSpec": "^2.1.3"
+  "name": "@twilio/webrtc",
+  "version": "2.3.0",
+  "description": "WebRTC-related APIs and shims used by twilio-video.js",
+  "scripts": {
+    "build": "npm-run-all clean lint test",
+    "clean": "rimraf coverage",
+    "lint": "eslint ./lib",
+    "test:unit": "istanbul cover node_modules/mocha/bin/_mocha -- ./test/unit/index.js",
+    "test:integration:native": "karma start karma/integration.conf.js",
+    "test:integration:adapter": "karma start karma/integration.adapter.conf.js",
+    "test:integration": "npm-run-all test:integration:*",
+    "test": "npm-run-all test:*"
   },
-  "_requiredBy": [
-    "/twilio-video"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twilio/twilio-webrtc.js.git"
+  },
+  "keywords": [
+    "shim",
+    "twilio",
+    "video",
+    "webrtc"
   ],
-  "_resolved": "https://registry.npmjs.org/@twilio/webrtc/-/webrtc-2.1.3.tgz",
-  "_shasum": "3920a5aea6ebe1ac434b4dfe17430d3c1035dcc2",
-  "_spec": "@twilio/webrtc@^2.1.3",
-  "_where": "/Users/CARECLOUD/Documents/Edwar/video-quickstart-js/node_modules/twilio-video",
-  "author": {
-    "name": "Manjesh Malavalli",
-    "email": "mmalavalli@twilio.com"
-  },
+  "author": "Manjesh Malavalli <mmalavalli@twilio.com>",
+  "contributors": [
+    "Mark Roberts <mroberts@twilio.com>",
+    "Ryan Rowland <rrowland@twilio.com>"
+  ],
+  "license": "BSD-3-Clause",
+  "main": "./lib/index.js",
   "bugs": {
     "url": "https://github.com/twilio/twilio-webrtc.js/issues"
   },
-  "bundleDependencies": false,
-  "contributors": [
-    {
-      "name": "Mark Roberts",
-      "email": "mroberts@twilio.com"
-    },
-    {
-      "name": "Ryan Rowland",
-      "email": "rrowland@twilio.com"
-    }
-  ],
-  "deprecated": false,
-  "description": "WebRTC-related APIs and shims used by twilio-video.js",
+  "homepage": "https://github.com/twilio/twilio-webrtc.js#readme",
   "devDependencies": {
     "browserify": "^14.4.0",
     "envify": "^4.1.0",
@@ -14593,7 +14882,7 @@ module.exports={
     "karma-chrome-launcher": "^2.2.0",
     "karma-firefox-launcher": "^1.0.1",
     "karma-mocha": "^1.3.0",
-    "karma-safaritechpreview-launcher": "0.0.6",
+    "karma-safari-launcher": "^1.0.0",
     "karma-spec-reporter": "0.0.31",
     "mocha": "^3.5.0",
     "npm-run-all": "^4.0.2",
@@ -14601,33 +14890,8 @@ module.exports={
     "rimraf": "^2.6.1",
     "travis-multirunner": "^4.2.3",
     "watchify": "^3.9.0",
-    "webrtc-adapter": "^6.0.1"
-  },
-  "homepage": "https://github.com/twilio/twilio-webrtc.js#readme",
-  "keywords": [
-    "shim",
-    "twilio",
-    "video",
-    "webrtc"
-  ],
-  "license": "BSD-3-Clause",
-  "main": "./lib/index.js",
-  "name": "@twilio/webrtc",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/twilio/twilio-webrtc.js.git"
-  },
-  "scripts": {
-    "build": "npm-run-all clean lint test",
-    "clean": "rimraf coverage",
-    "lint": "eslint ./lib",
-    "test": "npm-run-all test:*",
-    "test:integration": "npm-run-all test:integration:*",
-    "test:integration:adapter": "karma start karma/integration.adapter.conf.js",
-    "test:integration:native": "karma start karma/integration.conf.js",
-    "test:unit": "istanbul cover node_modules/mocha/bin/_mocha -- ./test/unit/index.js"
-  },
-  "version": "2.1.3"
+    "webrtc-adapter": "^6.4.8"
+  }
 }
 
 },{}],58:[function(require,module,exports){
@@ -14935,31 +15199,6 @@ function isUndefined(arg) {
 }
 
 },{}],59:[function(require,module,exports){
-if (typeof Object.create === 'function') {
-  // implementation from standard node.js 'util' module
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    ctor.prototype = Object.create(superCtor.prototype, {
-      constructor: {
-        value: ctor,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-  };
-} else {
-  // old school shim for old browsers
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    var TempCtor = function () {}
-    TempCtor.prototype = superCtor.prototype
-    ctor.prototype = new TempCtor()
-    ctor.prototype.constructor = ctor
-  }
-}
-
-},{}],60:[function(require,module,exports){
 (function (global){
 
 /* **********************************************
@@ -14980,20 +15219,20 @@ var _self = (typeof window !== 'undefined')
  * @author Lea Verou http://lea.verou.me
  */
 
-var Prism = (function(){
+var Prism = (function (_self){
 
 // Private helper vars
 var lang = /\blang(?:uage)?-([\w-]+)\b/i;
 var uniqueId = 0;
 
-var _ = _self.Prism = {
+var _ = {
 	manual: _self.Prism && _self.Prism.manual,
 	disableWorkerMessageHandler: _self.Prism && _self.Prism.disableWorkerMessageHandler,
 	util: {
 		encode: function (tokens) {
 			if (tokens instanceof Token) {
 				return new Token(tokens.type, _.util.encode(tokens.content), tokens.alias);
-			} else if (_.util.type(tokens) === 'Array') {
+			} else if (Array.isArray(tokens)) {
 				return tokens.map(_.util.encode);
 			} else {
 				return tokens.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\u00a0/g, ' ');
@@ -15001,7 +15240,7 @@ var _ = _self.Prism = {
 		},
 
 		type: function (o) {
-			return Object.prototype.toString.call(o).match(/\[object (\w+)\]/)[1];
+			return Object.prototype.toString.call(o).slice(8, -1);
 		},
 
 		objId: function (obj) {
@@ -15012,41 +15251,44 @@ var _ = _self.Prism = {
 		},
 
 		// Deep clone a language definition (e.g. to extend it)
-		clone: function (o, visited) {
-			var type = _.util.type(o);
+		clone: function deepClone(o, visited) {
+			var clone, id, type = _.util.type(o);
 			visited = visited || {};
 
 			switch (type) {
 				case 'Object':
-					if (visited[_.util.objId(o)]) {
-						return visited[_.util.objId(o)];
+					id = _.util.objId(o);
+					if (visited[id]) {
+						return visited[id];
 					}
-					var clone = {};
-					visited[_.util.objId(o)] = clone;
+					clone = {};
+					visited[id] = clone;
 
 					for (var key in o) {
 						if (o.hasOwnProperty(key)) {
-							clone[key] = _.util.clone(o[key], visited);
+							clone[key] = deepClone(o[key], visited);
 						}
 					}
 
 					return clone;
 
 				case 'Array':
-					if (visited[_.util.objId(o)]) {
-						return visited[_.util.objId(o)];
+					id = _.util.objId(o);
+					if (visited[id]) {
+						return visited[id];
 					}
-					var clone = [];
-					visited[_.util.objId(o)] = clone;
+					clone = [];
+					visited[id] = clone;
 
 					o.forEach(function (v, i) {
-						clone[i] = _.util.clone(v, visited);
+						clone[i] = deepClone(v, visited);
 					});
 
 					return clone;
-			}
 
-			return o;
+				default:
+					return o;
+			}
 		}
 	},
 
@@ -15064,72 +15306,68 @@ var _ = _self.Prism = {
 		/**
 		 * Insert a token before another token in a language literal
 		 * As this needs to recreate the object (we cannot actually insert before keys in object literals),
-		 * we cannot just provide an object, we need anobject and a key.
+		 * we cannot just provide an object, we need an object and a key.
 		 * @param inside The key (or language id) of the parent
-		 * @param before The key to insert before. If not provided, the function appends instead.
+		 * @param before The key to insert before.
 		 * @param insert Object with the key/value pairs to insert
 		 * @param root The object that contains `inside`. If equal to Prism.languages, it can be omitted.
 		 */
 		insertBefore: function (inside, before, insert, root) {
 			root = root || _.languages;
 			var grammar = root[inside];
-
-			if (arguments.length == 2) {
-				insert = arguments[1];
-
-				for (var newToken in insert) {
-					if (insert.hasOwnProperty(newToken)) {
-						grammar[newToken] = insert[newToken];
-					}
-				}
-
-				return grammar;
-			}
-
 			var ret = {};
 
 			for (var token in grammar) {
-
 				if (grammar.hasOwnProperty(token)) {
 
 					if (token == before) {
-
 						for (var newToken in insert) {
-
 							if (insert.hasOwnProperty(newToken)) {
 								ret[newToken] = insert[newToken];
 							}
 						}
 					}
 
-					ret[token] = grammar[token];
+					// Do not insert token which also occur in insert. See #1525
+					if (!insert.hasOwnProperty(token)) {
+						ret[token] = grammar[token];
+					}
 				}
 			}
 
+			var old = root[inside];
+			root[inside] = ret;
+
 			// Update references in other language definitions
 			_.languages.DFS(_.languages, function(key, value) {
-				if (value === root[inside] && key != inside) {
+				if (value === old && key != inside) {
 					this[key] = ret;
 				}
 			});
 
-			return root[inside] = ret;
+			return ret;
 		},
 
 		// Traverse a language definition with Depth First Search
-		DFS: function(o, callback, type, visited) {
+		DFS: function DFS(o, callback, type, visited) {
 			visited = visited || {};
+
+			var objId = _.util.objId;
+
 			for (var i in o) {
 				if (o.hasOwnProperty(i)) {
 					callback.call(o, i, o[i], type || i);
 
-					if (_.util.type(o[i]) === 'Object' && !visited[_.util.objId(o[i])]) {
-						visited[_.util.objId(o[i])] = true;
-						_.languages.DFS(o[i], callback, null, visited);
+					var property = o[i],
+					    propertyType = _.util.type(property);
+
+					if (propertyType === 'Object' && !visited[objId(property)]) {
+						visited[objId(property)] = true;
+						DFS(property, callback, null, visited);
 					}
-					else if (_.util.type(o[i]) === 'Array' && !visited[_.util.objId(o[i])]) {
-						visited[_.util.objId(o[i])] = true;
-						_.languages.DFS(o[i], callback, i, visited);
+					else if (propertyType === 'Array' && !visited[objId(property)]) {
+						visited[objId(property)] = true;
+						DFS(property, callback, i, visited);
 					}
 				}
 			}
@@ -15190,33 +15428,37 @@ var _ = _self.Prism = {
 			code: code
 		};
 
+		var insertHighlightedCode = function (highlightedCode) {
+			env.highlightedCode = highlightedCode;
+
+			_.hooks.run('before-insert', env);
+
+			env.element.innerHTML = env.highlightedCode;
+
+			_.hooks.run('after-highlight', env);
+			_.hooks.run('complete', env);
+			callback && callback.call(env.element);
+		}
+
 		_.hooks.run('before-sanity-check', env);
 
-		if (!env.code || !env.grammar) {
-			if (env.code) {
-				_.hooks.run('before-highlight', env);
-				env.element.textContent = env.code;
-				_.hooks.run('after-highlight', env);
-			}
+		if (!env.code) {
 			_.hooks.run('complete', env);
 			return;
 		}
 
 		_.hooks.run('before-highlight', env);
 
+		if (!env.grammar) {
+			insertHighlightedCode(_.util.encode(env.code));
+			return;
+		}
+
 		if (async && _self.Worker) {
 			var worker = new Worker(_.filename);
 
 			worker.onmessage = function(evt) {
-				env.highlightedCode = evt.data;
-
-				_.hooks.run('before-insert', env);
-
-				env.element.innerHTML = env.highlightedCode;
-
-				callback && callback.call(env.element);
-				_.hooks.run('after-highlight', env);
-				_.hooks.run('complete', env);
+				insertHighlightedCode(evt.data);
 			};
 
 			worker.postMessage(JSON.stringify({
@@ -15226,16 +15468,7 @@ var _ = _self.Prism = {
 			}));
 		}
 		else {
-			env.highlightedCode = _.highlight(env.code, env.grammar, env.language);
-
-			_.hooks.run('before-insert', env);
-
-			env.element.innerHTML = env.highlightedCode;
-
-			callback && callback.call(element);
-
-			_.hooks.run('after-highlight', env);
-			_.hooks.run('complete', env);
+			insertHighlightedCode(_.highlight(env.code, env.grammar, env.language));
 		}
 	},
 
@@ -15252,8 +15485,6 @@ var _ = _self.Prism = {
 	},
 
 	matchGrammar: function (text, strarr, grammar, index, startPos, oneshot, target) {
-		var Token = _.Token;
-
 		for (var token in grammar) {
 			if(!grammar.hasOwnProperty(token) || !grammar[token]) {
 				continue;
@@ -15379,7 +15610,7 @@ var _ = _self.Prism = {
 		}
 	},
 
-	tokenize: function(text, grammar, language) {
+	tokenize: function(text, grammar) {
 		var strarr = [text];
 
 		var rest = grammar.rest;
@@ -15419,24 +15650,28 @@ var _ = _self.Prism = {
 				callback(env);
 			}
 		}
-	}
+	},
+
+	Token: Token
 };
 
-var Token = _.Token = function(type, content, alias, matchedStr, greedy) {
+_self.Prism = _;
+
+function Token(type, content, alias, matchedStr, greedy) {
 	this.type = type;
 	this.content = content;
 	this.alias = alias;
 	// Copy of the full string this token was created from
 	this.length = (matchedStr || "").length|0;
 	this.greedy = !!greedy;
-};
+}
 
 Token.stringify = function(o, language, parent) {
 	if (typeof o == 'string') {
 		return o;
 	}
 
-	if (_.util.type(o) === 'Array') {
+	if (Array.isArray(o)) {
 		return o.map(function(element) {
 			return Token.stringify(element, language, o);
 		}).join('');
@@ -15453,7 +15688,7 @@ Token.stringify = function(o, language, parent) {
 	};
 
 	if (o.alias) {
-		var aliases = _.util.type(o.alias) === 'Array' ? o.alias : [o.alias];
+		var aliases = Array.isArray(o.alias) ? o.alias : [o.alias];
 		Array.prototype.push.apply(env.classes, aliases);
 	}
 
@@ -15470,7 +15705,7 @@ Token.stringify = function(o, language, parent) {
 if (!_self.document) {
 	if (!_self.addEventListener) {
 		// in Node.js
-		return _self.Prism;
+		return _;
 	}
 
 	if (!_.disableWorkerMessageHandler) {
@@ -15488,7 +15723,7 @@ if (!_self.document) {
 		}, false);
 	}
 
-	return _self.Prism;
+	return _;
 }
 
 //Get current script and highlight
@@ -15511,9 +15746,9 @@ if (script) {
 	}
 }
 
-return _self.Prism;
+return _;
 
-})();
+})(_self);
 
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = Prism;
@@ -15535,7 +15770,7 @@ Prism.languages.markup = {
 	'doctype': /<!DOCTYPE[\s\S]+?>/i,
 	'cdata': /<!\[CDATA\[[\s\S]*?]]>/i,
 	'tag': {
-		pattern: /<\/?(?!\d)[^\s>\/=$<%]+(?:\s+[^\s>\/=]+(?:=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+))?)*\s*\/?>/i,
+		pattern: /<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/i,
 		greedy: true,
 		inside: {
 			'tag': {
@@ -15546,12 +15781,12 @@ Prism.languages.markup = {
 				}
 			},
 			'attr-value': {
-				pattern: /=(?:("|')(?:\\[\s\S]|(?!\1)[^\\])*\1|[^\s'">=]+)/i,
+				pattern: /=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/i,
 				inside: {
 					'punctuation': [
 						/^=/,
 						{
-							pattern: /(^|[^\\])["']/,
+							pattern: /^(\s*)["']|["']$/,
 							lookbehind: true
 						}
 					]
@@ -15581,7 +15816,51 @@ Prism.hooks.add('wrap', function(env) {
 	}
 });
 
-Prism.languages.xml = Prism.languages.markup;
+Object.defineProperty(Prism.languages.markup.tag, 'addInlined', {
+	/**
+	 * Adds an inlined language to markup.
+	 *
+	 * An example of an inlined language is CSS with `<style>` tags.
+	 *
+	 * @param {string} tagName The name of the tag that contains the inlined language. This name will be treated as
+	 * case insensitive.
+	 * @param {string} lang The language key.
+	 * @example
+	 * addInlined('style', 'css');
+	 */
+	value: function addInlined(tagName, lang) {
+		var includedCdataInside = {};
+		includedCdataInside['language-' + lang] = {
+			pattern: /(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,
+			lookbehind: true,
+			inside: Prism.languages[lang]
+		};
+		includedCdataInside['cdata'] = /^<!\[CDATA\[|\]\]>$/i;
+
+		var inside = {
+			'included-cdata': {
+				pattern: /<!\[CDATA\[[\s\S]*?\]\]>/i,
+				inside: includedCdataInside
+			}
+		};
+		inside['language-' + lang] = {
+			pattern: /[\s\S]+/,
+			inside: Prism.languages[lang]
+		};
+
+		var def = {};
+		def[tagName] = {
+			pattern: RegExp(/(<__[\s\S]*?>)(?:<!\[CDATA\[[\s\S]*?\]\]>\s*|[\s\S])*?(?=<\/__>)/.source.replace(/__/g, tagName), 'i'),
+			lookbehind: true,
+			greedy: true,
+			inside: inside
+		};
+
+		Prism.languages.insertBefore('markup', 'cdata', def);
+	}
+});
+
+Prism.languages.xml = Prism.languages.extend('markup', {});
 Prism.languages.html = Prism.languages.markup;
 Prism.languages.mathml = Prism.languages.markup;
 Prism.languages.svg = Prism.languages.markup;
@@ -15591,58 +15870,58 @@ Prism.languages.svg = Prism.languages.markup;
      Begin prism-css.js
 ********************************************** */
 
-Prism.languages.css = {
-	'comment': /\/\*[\s\S]*?\*\//,
-	'atrule': {
-		pattern: /@[\w-]+?.*?(?:;|(?=\s*\{))/i,
-		inside: {
-			'rule': /@[\w-]+/
-			// See rest below
-		}
-	},
-	'url': /url\((?:(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1|.*?)\)/i,
-	'selector': /[^{}\s][^{};]*?(?=\s*\{)/,
-	'string': {
-		pattern: /("|')(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,
-		greedy: true
-	},
-	'property': /[-_a-z\xA0-\uFFFF][-\w\xA0-\uFFFF]*(?=\s*:)/i,
-	'important': /\B!important\b/i,
-	'function': /[-a-z0-9]+(?=\()/i,
-	'punctuation': /[(){};:]/
-};
+(function (Prism) {
 
-Prism.languages.css['atrule'].inside.rest = Prism.languages.css;
+	var string = /("|')(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/;
 
-if (Prism.languages.markup) {
-	Prism.languages.insertBefore('markup', 'tag', {
-		'style': {
-			pattern: /(<style[\s\S]*?>)[\s\S]*?(?=<\/style>)/i,
-			lookbehind: true,
-			inside: Prism.languages.css,
-			alias: 'language-css',
-			greedy: true
-		}
-	});
-
-	Prism.languages.insertBefore('inside', 'attr-value', {
-		'style-attr': {
-			pattern: /\s*style=("|')(?:\\[\s\S]|(?!\1)[^\\])*\1/i,
+	Prism.languages.css = {
+		'comment': /\/\*[\s\S]*?\*\//,
+		'atrule': {
+			pattern: /@[\w-]+?[\s\S]*?(?:;|(?=\s*\{))/i,
 			inside: {
-				'attr-name': {
-					pattern: /^\s*style/i,
-					inside: Prism.languages.markup.tag.inside
+				'rule': /@[\w-]+/
+				// See rest below
+			}
+		},
+		'url': RegExp('url\\((?:' + string.source + '|.*?)\\)', 'i'),
+		'selector': RegExp('[^{}\\s](?:[^{};"\']|' + string.source + ')*?(?=\\s*\\{)'),
+		'string': {
+			pattern: string,
+			greedy: true
+		},
+		'property': /[-_a-z\xA0-\uFFFF][-\w\xA0-\uFFFF]*(?=\s*:)/i,
+		'important': /!important\b/i,
+		'function': /[-a-z0-9]+(?=\()/i,
+		'punctuation': /[(){};:,]/
+	};
+
+	Prism.languages.css['atrule'].inside.rest = Prism.languages.css;
+
+	var markup = Prism.languages.markup;
+	if (markup) {
+		markup.tag.addInlined('style', 'css');
+
+		Prism.languages.insertBefore('inside', 'attr-value', {
+			'style-attr': {
+				pattern: /\s*style=("|')(?:\\[\s\S]|(?!\1)[^\\])*\1/i,
+				inside: {
+					'attr-name': {
+						pattern: /^\s*style/i,
+						inside: markup.tag.inside
+					},
+					'punctuation': /^\s*=\s*['"]|['"]\s*$/,
+					'attr-value': {
+						pattern: /.+/i,
+						inside: Prism.languages.css
+					}
 				},
-				'punctuation': /^\s*=\s*['"]|['"]\s*$/,
-				'attr-value': {
-					pattern: /.+/i,
-					inside: Prism.languages.css
-				}
-			},
-			alias: 'language-css'
-		}
-	}, Prism.languages.markup.tag);
-}
+				alias: 'language-css'
+			}
+		}, markup.tag);
+	}
+
+}(Prism));
+
 
 /* **********************************************
      Begin prism-clike.js
@@ -15673,7 +15952,7 @@ Prism.languages.clike = {
 	},
 	'keyword': /\b(?:if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,
 	'boolean': /\b(?:true|false)\b/,
-	'function': /[a-z0-9_]+(?=\()/i,
+	'function': /\w+(?=\()/,
 	'number': /\b0x[\da-f]+\b|(?:\b\d+\.?\d*|\B\.\d+)(?:e[+-]?\d+)?/i,
 	'operator': /--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,
 	'punctuation': /[{}[\];(),.:]/
@@ -15685,25 +15964,64 @@ Prism.languages.clike = {
 ********************************************** */
 
 Prism.languages.javascript = Prism.languages.extend('clike', {
-	'keyword': /\b(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|var|void|while|with|yield)\b/,
-	'number': /\b(?:0[xX][\dA-Fa-f]+|0[bB][01]+|0[oO][0-7]+|NaN|Infinity)\b|(?:\b\d+\.?\d*|\B\.\d+)(?:[Ee][+-]?\d+)?/,
+	'class-name': [
+		Prism.languages.clike['class-name'],
+		{
+			pattern: /(^|[^$\w\xA0-\uFFFF])[_$A-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\.(?:prototype|constructor))/,
+			lookbehind: true
+		}
+	],
+	'keyword': [
+		{
+			pattern: /((?:^|})\s*)(?:catch|finally)\b/,
+			lookbehind: true
+		},
+		{
+			pattern: /(^|[^.])\b(?:as|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,
+			lookbehind: true
+		},
+	],
+	'number': /\b(?:(?:0[xX][\dA-Fa-f]+|0[bB][01]+|0[oO][0-7]+)n?|\d+n|NaN|Infinity)\b|(?:\b\d+\.?\d*|\B\.\d+)(?:[Ee][+-]?\d+)?/,
 	// Allow for all non-ASCII characters (See http://stackoverflow.com/a/2008444)
-	'function': /[_$a-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*\()/i,
+	'function': /[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,
 	'operator': /-[-=]?|\+[+=]?|!=?=?|<<?=?|>>?>?=?|=(?:==?|>)?|&[&=]?|\|[|=]?|\*\*?=?|\/=?|~|\^=?|%=?|\?|\.{3}/
 });
 
+Prism.languages.javascript['class-name'][0].pattern = /(\b(?:class|interface|extends|implements|instanceof|new)\s+)[\w.\\]+/
+
 Prism.languages.insertBefore('javascript', 'keyword', {
 	'regex': {
-		pattern: /((?:^|[^$\w\xA0-\uFFFF."'\])\s])\s*)\/(\[[^\]\r\n]+]|\\.|[^/\\\[\r\n])+\/[gimyu]{0,5}(?=\s*($|[\r\n,.;})\]]))/,
+		pattern: /((?:^|[^$\w\xA0-\uFFFF."'\])\s])\s*)\/(\[(?:[^\]\\\r\n]|\\.)*]|\\.|[^/\\\[\r\n])+\/[gimyu]{0,5}(?=\s*($|[\r\n,.;})\]]))/,
 		lookbehind: true,
 		greedy: true
 	},
 	// This must be declared before keyword because we use "function" inside the look-forward
 	'function-variable': {
-		pattern: /[_$a-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*=\s*(?:function\b|(?:\([^()]*\)|[_$a-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*)\s*=>))/i,
+		pattern: /[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|[_$a-zA-Z\xA0-\uFFFF][$\w\xA0-\uFFFF]*)\s*=>))/,
 		alias: 'function'
 	},
-	'constant': /\b[A-Z][A-Z\d_]*\b/
+	'parameter': [
+		{
+			pattern: /(function(?:\s+[_$A-Za-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*)?\s*\(\s*)(?!\s)(?:[^()]|\([^()]*\))+?(?=\s*\))/,
+			lookbehind: true,
+			inside: Prism.languages.javascript
+		},
+		{
+			pattern: /[_$a-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*(?=\s*=>)/i,
+			inside: Prism.languages.javascript
+		},
+		{
+			pattern: /(\(\s*)(?!\s)(?:[^()]|\([^()]*\))+?(?=\s*\)\s*=>)/,
+			lookbehind: true,
+			inside: Prism.languages.javascript
+		},
+		{
+			pattern: /((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:[_$A-Za-z\xA0-\uFFFF][$\w\xA0-\uFFFF]*\s*)\(\s*)(?!\s)(?:[^()]|\([^()]*\))+?(?=\s*\)\s*\{)/,
+			lookbehind: true,
+			inside: Prism.languages.javascript
+		}
+	],
+	'constant': /\b[A-Z](?:[A-Z_]|\dx?)*\b/
 });
 
 Prism.languages.insertBefore('javascript', 'string', {
@@ -15718,25 +16036,16 @@ Prism.languages.insertBefore('javascript', 'string', {
 						pattern: /^\${|}$/,
 						alias: 'punctuation'
 					},
-					rest: null // See below
+					rest: Prism.languages.javascript
 				}
 			},
 			'string': /[\s\S]+/
 		}
 	}
 });
-Prism.languages.javascript['template-string'].inside['interpolation'].inside.rest = Prism.languages.javascript;
 
 if (Prism.languages.markup) {
-	Prism.languages.insertBefore('markup', 'tag', {
-		'script': {
-			pattern: /(<script[\s\S]*?>)[\s\S]*?(?=<\/script>)/i,
-			lookbehind: true,
-			inside: Prism.languages.javascript,
-			alias: 'language-javascript',
-			greedy: true
-		}
-	});
+	Prism.languages.markup.tag.addInlined('script', 'javascript');
 }
 
 Prism.languages.js = Prism.languages.javascript;
@@ -15751,7 +16060,11 @@ Prism.languages.js = Prism.languages.javascript;
 		return;
 	}
 
-	self.Prism.fileHighlight = function() {
+	/**
+	 * @param {Element} [container=document]
+	 */
+	self.Prism.fileHighlight = function(container) {
+		container = container || document;
 
 		var Extensions = {
 			'js': 'javascript',
@@ -15765,7 +16078,13 @@ Prism.languages.js = Prism.languages.javascript;
 			'tex': 'latex'
 		};
 
-		Array.prototype.slice.call(document.querySelectorAll('pre[data-src]')).forEach(function (pre) {
+		Array.prototype.slice.call(container.querySelectorAll('pre[data-src]')).forEach(function (pre) {
+			// ignore if already loaded
+			if (pre.hasAttribute('data-src-loaded')) {
+				return;
+			}
+
+			// load current
 			var src = pre.getAttribute('data-src');
 
 			var language, parent = pre;
@@ -15803,6 +16122,8 @@ Prism.languages.js = Prism.languages.javascript;
 						code.textContent = xhr.responseText;
 
 						Prism.highlightElement(code);
+						// mark as loaded
+						pre.setAttribute('data-src-loaded', '');
 					}
 					else if (xhr.status >= 400) {
 						code.textContent = '✖ Error ' + xhr.status + ' while fetching file: ' + xhr.statusText;
@@ -15833,11 +16154,15 @@ Prism.languages.js = Prism.languages.javascript;
 
 	};
 
-	document.addEventListener('DOMContentLoaded', self.Prism.fileHighlight);
+	document.addEventListener('DOMContentLoaded', function () {
+		// execute inside handler, for dropping Event as argument
+		self.Prism.fileHighlight();
+	});
 
 })();
+
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],61:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -16023,7 +16348,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],62:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 /*
     StackBlur - a fast almost Gaussian Blur For Canvas
 
@@ -16638,7 +16963,7 @@ module.exports = {
     imageDataRGB: processImageDataRGB
 };
 
-},{}],63:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 'use strict';
 
 var CancelablePromise = require('./util/cancelablepromise');
@@ -16687,10 +17012,13 @@ function createCancelableRoomPromise(getLocalTracks, createLocalParticipant, cre
 }
 
 module.exports = createCancelableRoomPromise;
-},{"./util/cancelablepromise":157}],64:[function(require,module,exports){
+},{"./util/cancelablepromise":167}],63:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _require = require('@twilio/webrtc/lib/util'),
+    guessBrowser = _require.guessBrowser;
 
 var CancelablePromise = require('./util/cancelablepromise');
 var createCancelableRoomPromise = require('./cancelableroompromise');
@@ -16700,7 +17028,6 @@ var constants = require('./util/constants');
 var Room = require('./room');
 var E = require('./util/constants').typeErrors;
 var EncodingParametersImpl = require('./encodingparameters');
-var guessBrowser = require('./util').guessBrowser;
 var LocalAudioTrack = require('./media/track/es5/localaudiotrack');
 var LocalDataTrack = require('./media/track/es5/localdatatrack');
 var LocalParticipant = require('./localparticipant');
@@ -16710,6 +17037,7 @@ var MediaStreamTrack = require('@twilio/webrtc').MediaStreamTrack;
 var NTSIceServerSource = require('./iceserversource/nts');
 var SignalingV2 = require('./signaling/v2');
 var util = require('./util');
+var NetworkQualityConfigurationImpl = require('./networkqualityconfiguration');
 
 // This is used to make out which connect() call a particular Log statement
 // belongs to. Each call to connect() increments this counter.
@@ -16815,6 +17143,7 @@ function connect(token, options) {
   options = Object.assign({
     abortOnIceServersTimeout: false,
     createLocalTracks: createLocalTracks,
+    dominantSpeaker: false,
     environment: constants.DEFAULT_ENVIRONMENT,
     iceServersTimeout: constants.ICE_SERVERS_TIMEOUT_MS,
     insights: true,
@@ -16827,6 +17156,7 @@ function connect(token, options) {
     maxAudioBitrate: null,
     maxVideoBitrate: null,
     name: null,
+    networkQuality: false,
     preferredAudioCodecs: [],
     preferredVideoCodecs: [],
     realm: constants.DEFAULT_REALM,
@@ -16902,12 +17232,17 @@ function connect(token, options) {
     video: options.preferredVideoCodecs.map(normalizeVideoCodecSettings)
   };
 
+  var networkQualityConfiguration = new NetworkQualityConfigurationImpl(_typeof(options.networkQuality) === 'object' ? options.networkQuality : {});
+
+  // Convert options.networkQuality to boolean to configure Media Signaling
+  options.networkQuality = _typeof(options.networkQuality) === 'object' || options.networkQuality;
+
   // Create a CancelableRoomPromise<Room> that resolves after these steps:
   // 1 - Get the LocalTracks.
   // 2 - Create the LocalParticipant using options.tracks.
   // 3 - Connect to rtc-room-service and create the RoomSignaling.
   // 4 - Create the Room and then resolve the CancelablePromise.
-  var cancelableRoomPromise = createCancelableRoomPromise(getLocalTracks.bind(null, options), createLocalParticipant.bind(null, signaling, log, encodingParameters, options), createRoomSignaling.bind(null, token, options, signaling, iceServerSource, encodingParameters, preferredCodecs), createRoom.bind(null, options));
+  var cancelableRoomPromise = createCancelableRoomPromise(getLocalTracks.bind(null, options), createLocalParticipant.bind(null, signaling, log, encodingParameters, networkQualityConfiguration, options), createRoomSignaling.bind(null, token, options, signaling, iceServerSource, encodingParameters, preferredCodecs), createRoom.bind(null, options));
 
   cancelableRoomPromise.then(function (room) {
     log.info('Connected to Room:', room.toString());
@@ -16960,8 +17295,13 @@ function connect(token, options) {
  *   as a hint for variable bitrate codecs, but will not take effect for fixed
  *   bitrate codecs
  * @property {?string} [name=null] - Set to connect to a {@link Room} by name
- * @property {boolean} [networkQuality=false] - Whether to enable the Network
- *   Quality API or not. This only takes effect in Group Rooms.
+ * @property {boolean|NetworkQualityConfiguration} [networkQuality=false] - Whether to enable the Network
+ *   Quality API or not. This only takes effect in Group Rooms. Pass a {@link NetworkQualityConfiguration}
+ *   to configure verbosity levels for network quality information for {@link LocalParticipant}
+ *   and {@link RemoteParticipant}s. A <code>true</code> value will set the {@link NetworkQualityVerbosity}
+ *   for the {@link LocalParticipant} to {@link NetworkQualityVerbosity}<code style="padding:0 0">#minimal</code>
+ *   and the {@link NetworkQualityVerbosity} for {@link RemoteParticipant}s to
+ *   {@link NetworkQualityVerbosity}<code style="padding:0 0">#none</code>.
  * @property {Array<AudioCodec>} [preferredAudioCodecs=[]] - Preferred audio codecs;
  *  An empty array preserves the current audio codec preference order.
  * @property {Array<VideoCodec|VideoCodecSettings>} [preferredVideoCodecs=[]] -
@@ -16983,6 +17323,14 @@ function connect(token, options) {
  * @property {boolean|CreateLocalTrackOptions} [video=true] - Whether or not to
  *   get local video with <code>getUserMedia</code> when <code>tracks</code>
  *   are not provided.
+ */
+
+/**
+ * Configure verbosity levels for network quality information for
+ * {@link LocalParticipant} and {@link RemoteParticipant}s.
+ * @typedef {object} NetworkQualityConfiguration
+ * @property {NetworkQualityVerbosity} [local=1] - Verbosity level for {@link LocalParticipant}
+ * @property {NetworkQualityVerbosity} [remote=0] - Verbosity level for {@link RemoteParticipant}s
  */
 
 /**
@@ -17046,8 +17394,39 @@ var LogLevel = {
   off: 'off'
 };
 
-function createLocalParticipant(signaling, log, encodingParameters, options, localTracks) {
-  var localParticipantSignaling = signaling.createLocalParticipantSignaling(encodingParameters);
+/**
+ * The verbosity level of network quality information of a {@link Participant}.
+ * @enum {number}
+ */
+
+// eslint-disable-next-line
+var NetworkQualityVerbosity = {
+  /**
+   * Nothing is reported for the {@link Participant}. This has no effect and
+   * defaults to {@link NetworkQualityVerbosity#minimal} for the {@link LocalParticipant}.
+   */
+  none: 0,
+  /**
+   * Reports {@link NetworkQualityLevel} for the {@link Participant}.
+   */
+  minimal: 1,
+  /**
+   * Reports {@link NetworkQualityLevel} and {@link NetworkQualityStats} for the {@link Participant}.
+   * {@link NetworkQualityStats} is populated with audio and video {@link NetworkQualityLevel}s
+   * based on which the {@link Participant}'s {@link NetworkQualityLevel} is calculated.
+   */
+  moderate: 2,
+  /**
+   * Reports {@link NetworkQualityLevel} and {@link NetworkQualityStats} for the {@link Participant}.
+   * {@link NetworkQualityStats} is populated with audio and video {@link NetworkQualityLevel}s
+   * and their corresponding {@link NetworkQualityMediaStats} based on which the
+   * {@link Participant}'s {@link NetworkQualityLevel} is calculated.
+   */
+  detailed: 3
+};
+
+function createLocalParticipant(signaling, log, encodingParameters, networkQualityConfiguration, options, localTracks) {
+  var localParticipantSignaling = signaling.createLocalParticipantSignaling(encodingParameters, networkQualityConfiguration);
   log.debug('Creating a new LocalParticipant:', localParticipantSignaling);
   return new options.LocalParticipant(localParticipantSignaling, localTracks, options);
 }
@@ -17128,7 +17507,7 @@ function normalizeVideoCodecSettings(nameOrSettings) {
 }
 
 module.exports = connect;
-},{"./cancelableroompromise":63,"./createlocaltracks":66,"./encodingparameters":72,"./iceserversource/constant":73,"./iceserversource/nts":74,"./localparticipant":76,"./media/track/es5/localaudiotrack":78,"./media/track/es5/localdatatrack":79,"./media/track/es5/localvideotrack":80,"./room":108,"./signaling/v2":120,"./util":160,"./util/cancelablepromise":157,"./util/constants":158,"./util/log":163,"@twilio/webrtc":41}],65:[function(require,module,exports){
+},{"./cancelableroompromise":62,"./createlocaltracks":65,"./encodingparameters":71,"./iceserversource/constant":72,"./iceserversource/nts":73,"./localparticipant":75,"./media/track/es5/localaudiotrack":77,"./media/track/es5/localdatatrack":78,"./media/track/es5/localvideotrack":79,"./networkqualityconfiguration":103,"./room":108,"./signaling/v2":120,"./util":170,"./util/cancelablepromise":167,"./util/constants":168,"./util/log":173,"@twilio/webrtc":41,"@twilio/webrtc/lib/util":54}],64:[function(require,module,exports){
 'use strict';
 
 var defaultCreateLocalTracks = require('./createlocaltracks');
@@ -17234,7 +17613,7 @@ module.exports = {
   audio: createLocalAudioTrack,
   video: createLocalVideoTrack
 };
-},{"./createlocaltracks":66,"./util/constants":158}],66:[function(require,module,exports){
+},{"./createlocaltracks":65,"./util/constants":168}],65:[function(require,module,exports){
 'use strict';
 
 var asLocalTrack = require('./util').asLocalTrack;
@@ -17375,7 +17754,7 @@ function createLocalTracks(options) {
  */
 
 module.exports = createLocalTracks;
-},{"./media/track/es5/localaudiotrack":78,"./media/track/es5/localdatatrack":79,"./media/track/es5/localvideotrack":80,"./util":160,"./util/constants":158,"./util/log":163,"./webaudio/workaround180748":176,"@twilio/webrtc":41}],67:[function(require,module,exports){
+},{"./media/track/es5/localaudiotrack":77,"./media/track/es5/localdatatrack":78,"./media/track/es5/localvideotrack":79,"./util":170,"./util/constants":168,"./util/log":173,"./webaudio/workaround180748":186,"@twilio/webrtc":41}],66:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -17395,6 +17774,7 @@ var DataTransport = require('./transport');
  * receive data.
  * @extends DataTrackTransceiver
  * @emits DataTrackReceiver#message
+ * @emits DataTrackReceiver#close
  */
 
 var DataTrackReceiver = function (_DataTrackTransceiver) {
@@ -17423,6 +17803,10 @@ var DataTrackReceiver = function (_DataTrackTransceiver) {
     dataChannel.addEventListener('message', function (event) {
       _this.emit('message', event.data);
     });
+
+    dataChannel.addEventListener('close', function () {
+      _this.emit('close');
+    });
     return _this;
   }
 
@@ -17447,8 +17831,12 @@ var DataTrackReceiver = function (_DataTrackTransceiver) {
  * @param {string|ArrayBuffer} data
  */
 
+/**
+ * @event DataTrackReceiver#close
+ */
+
 module.exports = DataTrackReceiver;
-},{"./transceiver":69,"./transport":70}],68:[function(require,module,exports){
+},{"./transceiver":68,"./transport":69}],67:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -17543,7 +17931,7 @@ var DataTrackSender = function (_DataTrackTransceiver) {
 }(DataTrackTransceiver);
 
 module.exports = DataTrackSender;
-},{"../util":160,"./transceiver":69}],69:[function(require,module,exports){
+},{"../util":170,"./transceiver":68}],68:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -17602,7 +17990,7 @@ var DataTrackTransceiver = function (_TrackTransceiver) {
 }(TrackTransceiver);
 
 module.exports = DataTrackTransceiver;
-},{"../transceiver":155}],70:[function(require,module,exports){
+},{"../transceiver":165}],69:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -17713,7 +18101,7 @@ var DataTransport = function (_EventEmitter) {
  */
 
 module.exports = DataTransport;
-},{"events":58}],71:[function(require,module,exports){
+},{"events":58}],70:[function(require,module,exports){
 'use strict';
 
 var request = require('./request');
@@ -17782,7 +18170,7 @@ function toQueryString(params) {
 }
 
 module.exports.getConfiguration = getConfiguration;
-},{"./request":107,"./util/twilio-video-errors":172}],72:[function(require,module,exports){
+},{"./request":107,"./util/twilio-video-errors":182}],71:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -17889,7 +18277,7 @@ var EncodingParametersImpl = function (_EventEmitter) {
  */
 
 module.exports = EncodingParametersImpl;
-},{"events":58}],73:[function(require,module,exports){
+},{"events":58}],72:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -17972,7 +18360,7 @@ var ConstantIceServerSource = function (_EventEmitter) {
 }(EventEmitter);
 
 module.exports = ConstantIceServerSource;
-},{"events":58}],74:[function(require,module,exports){
+},{"events":58}],73:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -18255,7 +18643,7 @@ function poll(client) {
 }
 
 module.exports = NTSIceServerSource;
-},{"../../package.json":177,"../ecs":71,"../util":160,"../util/constants":158,"../util/log":163,"../util/timeoutpromise":171,"../util/twilio-video-errors":172,"events":58}],75:[function(require,module,exports){
+},{"../../package.json":187,"../ecs":70,"../util":170,"../util/constants":168,"../util/log":173,"../util/timeoutpromise":181,"../util/twilio-video-errors":182,"events":58}],74:[function(require,module,exports){
 'use strict';
 
 var version = require('../package.json').version;
@@ -18301,7 +18689,7 @@ Object.defineProperties(Video, {
 });
 
 module.exports = Video;
-},{"../package.json":177,"./connect":64,"./createlocaltrack":65,"./createlocaltracks":66,"./media/track/es5/localaudiotrack":78,"./media/track/es5/localdatatrack":79,"./media/track/es5/localvideotrack":80,"./util/support":170}],76:[function(require,module,exports){
+},{"../package.json":187,"./connect":63,"./createlocaltrack":64,"./createlocaltracks":65,"./media/track/es5/localaudiotrack":77,"./media/track/es5/localdatatrack":78,"./media/track/es5/localvideotrack":79,"./util/support":180}],75:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -18506,14 +18894,18 @@ var LocalParticipant = function (_Participant) {
 
       function localTrackDisabled(localTrack) {
         var trackSignaling = signaling.tracks.get(localTrack.id);
-        trackSignaling.disable();
-        log.debug('Disabled the ' + util.trackClass(localTrack, true) + ':', localTrack.id);
+        if (trackSignaling) {
+          trackSignaling.disable();
+          log.debug('Disabled the ' + util.trackClass(localTrack, true) + ':', localTrack.id);
+        }
       }
 
       function localTrackEnabled(localTrack) {
         var trackSignaling = signaling.tracks.get(localTrack.id);
-        trackSignaling.enable();
-        log.debug('Enabled the ' + util.trackClass(localTrack, true) + ':', localTrack.id);
+        if (trackSignaling) {
+          trackSignaling.enable();
+          log.debug('Enabled the ' + util.trackClass(localTrack, true) + ':', localTrack.id);
+        }
       }
 
       this.on('trackDisabled', localTrackDisabled);
@@ -18825,6 +19217,50 @@ var LocalParticipant = function (_Participant) {
     }
 
     /**
+     * Sets the {@link NetworkQualityVerbosity} for the {@link LocalParticipant} and
+     * {@link RemoteParticipant}s. It does nothing if Network Quality is not enabled
+     * while calling {@link connect}.
+     * @param {NetworkQualityConfiguration} networkQualityConfiguration - The new
+     *   {@link NetworkQualityConfiguration}; If either or both of the local and
+     *   remote {@link NetworkQualityVerbosity} values are absent, then the corresponding
+     *   existing values are retained
+     * @returns {this}
+     * @example
+     * // Update verbosity levels for both LocalParticipant and RemoteParticipants
+     * localParticipant.setNetworkQualityConfiguration({
+     *   local: 1,
+     *   remote: 2
+     * });
+     * @example
+     * // Update verbosity level for only the LocalParticipant
+     * localParticipant.setNetworkQualityConfiguration({
+     *   local: 1
+     * });
+     *  @example
+     * // Update verbosity level for only the RemoteParticipants
+     * localParticipant.setNetworkQualityConfiguration({
+     *   remote: 2
+     * });
+     */
+
+  }, {
+    key: 'setNetworkQualityConfiguration',
+    value: function setNetworkQualityConfiguration(networkQualityConfiguration) {
+      if ((typeof networkQualityConfiguration === 'undefined' ? 'undefined' : _typeof(networkQualityConfiguration)) !== 'object' || networkQualityConfiguration === null) {
+        // eslint-disable-next-line new-cap
+        throw E.INVALID_TYPE('networkQualityConfiguration', 'NetworkQualityConfiguration');
+      }
+      ['local', 'remote'].forEach(function (prop) {
+        if (prop in networkQualityConfiguration && typeof networkQualityConfiguration[prop] !== 'number') {
+          // eslint-disable-next-line new-cap
+          throw E.INVALID_TYPE('networkQualityConfiguration.' + prop, 'number');
+        }
+      });
+      this._signaling.setNetworkQualityConfiguration(networkQualityConfiguration);
+      return this;
+    }
+
+    /**
      * Set the {@link LocalParticipant}'s {@link EncodingParameters}.
      * @param {?EncodingParameters} [encodingParameters] - The new
      *   {@link EncodingParameters}; If null, then the bitrate limits are removed;
@@ -19023,7 +19459,7 @@ function getTrackPublication(trackPublications, track) {
 }
 
 module.exports = LocalParticipant;
-},{"./media/track/es5/localaudiotrack":78,"./media/track/es5/localdatatrack":79,"./media/track/es5/localvideotrack":80,"./media/track/localaudiotrackpublication":83,"./media/track/localdatatrackpublication":85,"./media/track/localvideotrackpublication":89,"./participant":104,"./util":160,"./util/constants":158,"@twilio/webrtc":41}],77:[function(require,module,exports){
+},{"./media/track/es5/localaudiotrack":77,"./media/track/es5/localdatatrack":78,"./media/track/es5/localvideotrack":79,"./media/track/localaudiotrackpublication":82,"./media/track/localdatatrackpublication":84,"./media/track/localvideotrackpublication":88,"./participant":104,"./util":170,"./util/constants":168,"@twilio/webrtc":41}],76:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19204,7 +19640,7 @@ var AudioTrack = function (_MediaTrack) {
  */
 
 module.exports = AudioTrack;
-},{"./mediatrack":90}],78:[function(require,module,exports){
+},{"./mediatrack":89}],77:[function(require,module,exports){
 // TODO(mroberts): Remove this when we go to the next major version. This is
 // only in place so that we can support ES6 classes without requiring `new`.
 'use strict';
@@ -19223,7 +19659,7 @@ function LocalAudioTrack(mediaStreamTrack, options) {
 inherits(LocalAudioTrack, LocalAudioTrackClass);
 
 module.exports = LocalAudioTrack;
-},{"../localaudiotrack":82,"util":181}],79:[function(require,module,exports){
+},{"../localaudiotrack":81,"util":192}],78:[function(require,module,exports){
 // TODO(mroberts): Remove this when we go to the next major version. This is
 // only in place so that we can support ES6 classes without requiring `new`.
 'use strict';
@@ -19242,7 +19678,7 @@ function LocalDataTrack(options) {
 inherits(LocalDataTrack, LocalDataTrackClass);
 
 module.exports = LocalDataTrack;
-},{"../localdatatrack":84,"util":181}],80:[function(require,module,exports){
+},{"../localdatatrack":83,"util":192}],79:[function(require,module,exports){
 // TODO(mroberts): Remove this when we go to the next major version. This is
 // only in place so that we can support ES6 classes without requiring `new`.
 'use strict';
@@ -19261,7 +19697,7 @@ function LocalVideoTrack(mediaStreamTrack, options) {
 inherits(LocalVideoTrack, LocalVideoTrackClass);
 
 module.exports = LocalVideoTrack;
-},{"../localvideotrack":88,"util":181}],81:[function(require,module,exports){
+},{"../localvideotrack":87,"util":192}],80:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19391,7 +19827,7 @@ var Track = function (_EventEmitter) {
  */
 
 module.exports = Track;
-},{"../../util":160,"../../util/constants":158,"../../util/log":163,"events":58}],82:[function(require,module,exports){
+},{"../../util":170,"../../util/constants":168,"../../util/log":173,"events":58}],81:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19539,7 +19975,7 @@ var LocalAudioTrack = function (_LocalMediaAudioTrack) {
  */
 
 module.exports = LocalAudioTrack;
-},{"./audiotrack":77,"./localmediatrack":86}],83:[function(require,module,exports){
+},{"./audiotrack":76,"./localmediatrack":85}],82:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19588,7 +20024,7 @@ var LocalAudioTrackPublication = function (_LocalTrackPublicatio) {
 }(LocalTrackPublication);
 
 module.exports = LocalAudioTrackPublication;
-},{"./localtrackpublication":87}],84:[function(require,module,exports){
+},{"./localtrackpublication":86}],83:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19729,7 +20165,7 @@ var LocalDataTrack = function (_Track) {
  */
 
 module.exports = LocalDataTrack;
-},{"../../data/sender":68,"./":81}],85:[function(require,module,exports){
+},{"../../data/sender":67,"./":80}],84:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19778,7 +20214,7 @@ var LocalDataTrackPublication = function (_LocalTrackPublicatio) {
 }(LocalTrackPublication);
 
 module.exports = LocalDataTrackPublication;
-},{"./localtrackpublication":87}],86:[function(require,module,exports){
+},{"./localtrackpublication":86}],85:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19808,7 +20244,7 @@ function mixinLocalMediaTrack(AudioOrVideoTrack) {
 
     /**
      * Construct a {@link LocalMediaTrack} from a MediaStreamTrack.
-     * @param {MediaStream} mediaStreamTrack - The underlying MediaStreamTrack
+     * @param {MediaStreamTrack} mediaStreamTrack - The underlying MediaStreamTrack
      * @param {LocalTrackOptions} [options] - {@link LocalTrack} options
      */
     function LocalMediaTrack(mediaStreamTrack, options) {
@@ -19831,12 +20267,12 @@ function mixinLocalMediaTrack(AudioOrVideoTrack) {
         isEnabled: {
           enumerable: true,
           get: function get() {
-            return this.mediaStreamTrack.enabled;
+            return mediaStreamTrack.enabled;
           }
         },
         isStopped: {
           get: function get() {
-            return this.mediaStreamTrack.readyState === 'ended';
+            return mediaStreamTrack.readyState === 'ended';
           }
         }
       });
@@ -19889,7 +20325,7 @@ function mixinLocalMediaTrack(AudioOrVideoTrack) {
 }
 
 module.exports = mixinLocalMediaTrack;
-},{"./sender":100}],87:[function(require,module,exports){
+},{"./sender":99}],86:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -19988,7 +20424,7 @@ var LocalTrackPublication = function (_TrackPublication) {
 }(TrackPublication);
 
 module.exports = LocalTrackPublication;
-},{"./trackpublication":101}],88:[function(require,module,exports){
+},{"./trackpublication":100}],87:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -20126,7 +20562,7 @@ var LocalVideoTrack = function (_LocalMediaVideoTrack) {
  */
 
 module.exports = LocalVideoTrack;
-},{"./localmediatrack":86,"./videotrack":103}],89:[function(require,module,exports){
+},{"./localmediatrack":85,"./videotrack":102}],88:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -20175,7 +20611,7 @@ var LocalVideoTrackPublication = function (_LocalTrackPublicatio) {
 }(LocalTrackPublication);
 
 module.exports = LocalVideoTrackPublication;
-},{"./localtrackpublication":87}],90:[function(require,module,exports){
+},{"./localtrackpublication":86}],89:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -20464,7 +20900,7 @@ var MediaTrack = function (_Track) {
 }(Track);
 
 module.exports = MediaTrack;
-},{"./":81,"@twilio/webrtc":41}],91:[function(require,module,exports){
+},{"./":80,"@twilio/webrtc":41}],90:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -20498,7 +20934,7 @@ var MediaTrackReceiver = function (_MediaTrackTransceive) {
 }(MediaTrackTransceiver);
 
 module.exports = MediaTrackReceiver;
-},{"./transceiver":102}],92:[function(require,module,exports){
+},{"./transceiver":101}],91:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -20583,7 +21019,7 @@ var RemoteAudioTrack = function (_RemoteMediaAudioTrac) {
  */
 
 module.exports = RemoteAudioTrack;
-},{"./audiotrack":77,"./remotemediatrack":96}],93:[function(require,module,exports){
+},{"./audiotrack":76,"./remotemediatrack":95}],92:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -20656,7 +21092,7 @@ var RemoteAudioTrackPublication = function (_RemoteTrackPublicati) {
  */
 
 module.exports = RemoteAudioTrackPublication;
-},{"./remotetrackpublication":97}],94:[function(require,module,exports){
+},{"./remotetrackpublication":96}],93:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -20845,7 +21281,7 @@ var RemoteDataTrack = function (_Track) {
  */
 
 module.exports = RemoteDataTrack;
-},{"../../util":160,"./":81}],95:[function(require,module,exports){
+},{"../../util":170,"./":80}],94:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -20906,7 +21342,7 @@ var RemoteDataTrackPublication = function (_RemoteTrackPublicati) {
  */
 
 module.exports = RemoteDataTrackPublication;
-},{"./remotetrackpublication":97}],96:[function(require,module,exports){
+},{"./remotetrackpublication":96}],95:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -21081,7 +21517,7 @@ function mixinRemoteMediaTrack(AudioOrVideoTrack) {
  */
 
 module.exports = mixinRemoteMediaTrack;
-},{"../../util":160}],97:[function(require,module,exports){
+},{"../../util":170}],96:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -21246,7 +21682,7 @@ var RemoteTrackPublication = function (_TrackPublication) {
  */
 
 module.exports = RemoteTrackPublication;
-},{"./trackpublication":101}],98:[function(require,module,exports){
+},{"./trackpublication":100}],97:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -21332,7 +21768,7 @@ var RemoteVideoTrack = function (_RemoteMediaVideoTrac) {
  */
 
 module.exports = RemoteVideoTrack;
-},{"./remotemediatrack":96,"./videotrack":103}],99:[function(require,module,exports){
+},{"./remotemediatrack":95,"./videotrack":102}],98:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -21405,7 +21841,7 @@ var RemoteVideoTrackPublication = function (_RemoteTrackPublicati) {
  */
 
 module.exports = RemoteVideoTrackPublication;
-},{"./remotetrackpublication":97}],100:[function(require,module,exports){
+},{"./remotetrackpublication":96}],99:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -21475,7 +21911,7 @@ var MediaTrackSender = function (_MediaTrackTransceive) {
 }(MediaTrackTransceiver);
 
 module.exports = MediaTrackSender;
-},{"./transceiver":102}],101:[function(require,module,exports){
+},{"./transceiver":101}],100:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -21586,7 +22022,7 @@ var TrackPublication = function (_EventEmitter) {
  */
 
 module.exports = TrackPublication;
-},{"../../util":160,"../../util/constants":158,"../../util/log":163,"events":58}],102:[function(require,module,exports){
+},{"../../util":170,"../../util/constants":168,"../../util/log":173,"events":58}],101:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -21636,7 +22072,7 @@ var MediaTrackTransceiver = function (_TrackTransceiver) {
 }(TrackTransceiver);
 
 module.exports = MediaTrackTransceiver;
-},{"../../transceiver":155}],103:[function(require,module,exports){
+},{"../../transceiver":165}],102:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -21885,7 +22321,105 @@ function dimensionsChanged(track, elem) {
  */
 
 module.exports = VideoTrack;
-},{"./mediatrack":90}],104:[function(require,module,exports){
+},{"./mediatrack":89}],103:[function(require,module,exports){
+'use strict';
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _require = require('events'),
+    EventEmitter = _require.EventEmitter;
+
+var _require2 = require('./util/constants'),
+    DEFAULT_NQ_LEVEL_LOCAL = _require2.DEFAULT_NQ_LEVEL_LOCAL,
+    DEFAULT_NQ_LEVEL_REMOTE = _require2.DEFAULT_NQ_LEVEL_REMOTE,
+    MAX_NQ_LEVEL = _require2.MAX_NQ_LEVEL;
+
+var _require3 = require('./util'),
+    inRange = _require3.inRange;
+
+/**
+ * {@link NetworkQualityConfigurationImpl} represents an object which notifies its
+ * listeners of any changes in the values of its properties.
+ * @extends EventEmitter
+ * @implements NetworkQualityConfiguration
+ * @property {?NetworkQualityVerbosity} local - Verbosity level for {@link LocalParticipant}
+ * @property {?NetworkQualityVerbosity} remote - Verbosity level for {@link RemoteParticipant}s
+ */
+
+
+var NetworkQualityConfigurationImpl = function (_EventEmitter) {
+  _inherits(NetworkQualityConfigurationImpl, _EventEmitter);
+
+  /**
+   * Construct an {@link NetworkQualityConfigurationImpl}.
+   * @param {NetworkQualityConfiguration} networkQualityConfiguration - Initial {@link NetworkQualityConfiguration}
+   */
+  function NetworkQualityConfigurationImpl(networkQualityConfiguration) {
+    _classCallCheck(this, NetworkQualityConfigurationImpl);
+
+    var _this = _possibleConstructorReturn(this, (NetworkQualityConfigurationImpl.__proto__ || Object.getPrototypeOf(NetworkQualityConfigurationImpl)).call(this));
+
+    networkQualityConfiguration = Object.assign({
+      local: DEFAULT_NQ_LEVEL_LOCAL,
+      remote: DEFAULT_NQ_LEVEL_REMOTE
+    }, networkQualityConfiguration);
+
+    Object.defineProperties(_this, {
+      local: {
+        value: inRange(networkQualityConfiguration.local, DEFAULT_NQ_LEVEL_LOCAL, MAX_NQ_LEVEL) ? networkQualityConfiguration.local : DEFAULT_NQ_LEVEL_LOCAL,
+        writable: true
+      },
+      remote: {
+        value: inRange(networkQualityConfiguration.remote, DEFAULT_NQ_LEVEL_REMOTE, MAX_NQ_LEVEL) ? networkQualityConfiguration.remote : DEFAULT_NQ_LEVEL_REMOTE,
+        writable: true
+      }
+    });
+    return _this;
+  }
+
+  /**
+   * Update the verbosity levels for network quality information for
+   * {@link LocalParticipant} and {@link RemoteParticipant} with those
+   * in the given {@link NetworkQualityConfiguration}.
+   * @param {NetworkQualityConfiguration} networkQualityConfiguration - The new {@link NetworkQualityConfiguration}
+   * @fires NetworkQualityConfigurationImpl#changed
+   */
+
+
+  _createClass(NetworkQualityConfigurationImpl, [{
+    key: 'update',
+    value: function update(networkQualityConfiguration) {
+      var _this2 = this;
+
+      networkQualityConfiguration = Object.assign({
+        local: this.local,
+        remote: this.remote
+      }, networkQualityConfiguration);
+
+      [['local', DEFAULT_NQ_LEVEL_LOCAL, 3], ['remote', DEFAULT_NQ_LEVEL_REMOTE, 3]].forEach(function (_ref) {
+        var _ref2 = _slicedToArray(_ref, 3),
+            localOrRemote = _ref2[0],
+            min = _ref2[1],
+            max = _ref2[2];
+
+        _this2[localOrRemote] = typeof networkQualityConfiguration[localOrRemote] === 'number' && inRange(networkQualityConfiguration[localOrRemote], min, max) ? networkQualityConfiguration[localOrRemote] : min;
+      });
+    }
+  }]);
+
+  return NetworkQualityConfigurationImpl;
+}(EventEmitter);
+
+module.exports = NetworkQualityConfigurationImpl;
+},{"./util":170,"./util/constants":168,"events":58}],104:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -21928,6 +22462,10 @@ var nInstances = 0;
  * @property {Map<Track.SID, DataTrackPublication>} dataTrackPublications -
  *    The {@link Participant}'s {@link DataTrackPublication}s.
  * @property {Participant.Identity} identity - The identity of the {@link Participant}
+ * @property {?NetworkQualityLevel} networkQualityLevel - The
+ *    {@link Participant}'s current {@link NetworkQualityLevel}, if any
+ * @property {?NetworkQualityStats} networkQualityStats - The
+ *    {@link Participant}'s current {@link NetworkQualityStats}, if any
  * @property {Participant.SID} sid - The {@link Participant}'s SID
  * @property {string} state - "connected", "disconnected" or "failed"
  * @property {Map<Track.ID, Track>} tracks -
@@ -22037,6 +22575,18 @@ var Participant = function (_EventEmitter) {
           return signaling.identity;
         }
       },
+      networkQualityLevel: {
+        enumerable: true,
+        get: function get() {
+          return signaling.networkQualityLevel;
+        }
+      },
+      networkQualityStats: {
+        enumerable: true,
+        get: function get() {
+          return signaling.networkQualityStats;
+        }
+      },
       sid: {
         enumerable: true,
         get: function get() {
@@ -22069,7 +22619,7 @@ var Participant = function (_EventEmitter) {
 
     _this.tracks.forEach(reemitTrackEvents.bind(null, _this));
     signaling.on('networkQualityLevelChanged', function () {
-      return _this.emit('networkQualityLevelChanged', _this.networkQualityLevel);
+      return _this.emit('networkQualityLevelChanged', _this.networkQualityLevel, _this.networkQualityStats && (_this.networkQualityStats.audio || _this.networkQualityStats.video) ? _this.networkQualityStats : null);
     });
     reemitSignalingStateChangedEvents(_this, signaling);
     log.info('Created a new Participant' + (_this.identity ? ': ' + _this.identity : ''));
@@ -22101,12 +22651,6 @@ var Participant = function (_EventEmitter) {
       // in twilio-video.js@2.0.0 onwards.
       return [];
     }
-
-    /**
-     * Get the current {@link NetworkQualityLevel}, if any.
-     * @returns {?NetworkQualityLevel} networkQualityLevel - initially null
-     */
-
   }, {
     key: 'toString',
     value: function toString() {
@@ -22259,7 +22803,9 @@ var Participant = function (_EventEmitter) {
       }
 
       function trackSignalingUnsubscribed(signaling) {
-        var track = self.tracks.get(signaling.id);
+        var track = util.flatMap(self.tracks).find(function (track) {
+          return track.sid === signaling.sid;
+        });
         var publication = self.trackPublications.get(signaling.sid);
         if (track) {
           self._removeTrack(track, publication);
@@ -22358,25 +22904,6 @@ var Participant = function (_EventEmitter) {
       log.debug(util.trackPublicationClass(publication) + ':', publication);
       return publication;
     }
-  }, {
-    key: 'networkQualityLevel',
-    get: function get() {
-      return this._signaling.networkQualityLevel;
-    }
-
-    /**
-     * Get the current {@link NetworkQualityLevels}, if any.
-     * @private
-     * @deprecated - the decomposed levels are only used for debugging and will be
-     *   removed as soon as we are confident in our implementation
-     * @returns {?NetworkQualityLevels} networkQualityLevels - initially null
-     */
-
-  }, {
-    key: '_networkQualityLevels',
-    get: function get() {
-      return this._signaling.networkQualityLevels;
-    }
   }]);
 
   return Participant;
@@ -22405,6 +22932,8 @@ var Participant = function (_EventEmitter) {
  * The {@link Participant}'s {@link NetworkQualityLevel} changed.
  * @param {NetworkQualityLevel} networkQualityLevel - The new
  *   {@link NetworkQualityLevel}
+ * @param {?NetworkQualityStats} networkQualityStats - The {@link NetworkQualityStats}
+ *   based on which {@link NetworkQualityLevel} is calculated, if any
  * @event Participant#networkQualityLevelChanged
  */
 
@@ -22587,7 +23116,7 @@ function reemitTrackPublicationEvents(participant, publication) {
 }
 
 module.exports = Participant;
-},{"./media/track/remoteaudiotrack":92,"./media/track/remoteaudiotrackpublication":93,"./media/track/remotedatatrack":94,"./media/track/remotedatatrackpublication":95,"./media/track/remotevideotrack":98,"./media/track/remotevideotrackpublication":99,"./util":160,"events":58}],105:[function(require,module,exports){
+},{"./media/track/remoteaudiotrack":91,"./media/track/remoteaudiotrackpublication":92,"./media/track/remotedatatrack":93,"./media/track/remotedatatrackpublication":94,"./media/track/remotevideotrack":97,"./media/track/remotevideotrackpublication":98,"./util":170,"events":58}],105:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -22969,7 +23498,7 @@ var RemoteParticipant = function (_Participant) {
  */
 
 module.exports = RemoteParticipant;
-},{"./participant":104,"./util":160}],107:[function(require,module,exports){
+},{"./participant":104,"./util":170}],107:[function(require,module,exports){
 'use strict';
 
 var XHR = require('xmlhttprequest').XMLHttpRequest;
@@ -23022,7 +23551,7 @@ request.get = request.bind(null, 'GET');
 request.post = request.bind(null, 'POST');
 
 module.exports = request;
-},{"xmlhttprequest":179}],108:[function(require,module,exports){
+},{"xmlhttprequest":189}],108:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -23187,7 +23716,9 @@ var Room = function (_EventEmitter) {
     }
 
     /**
-     * Get the {@link Room}'s media statistics.
+     * Get the {@link Room}'s media statistics. This is not supported in Safari 12.0 or below
+     * due to this bug : https://bugs.webkit.org/show_bug.cgi?id=192601
+     *
      * @returns {Promise.<Array<StatsReport>>}
      */
 
@@ -23527,7 +24058,7 @@ function handleSignalingEvents(room, signaling) {
 }
 
 module.exports = Room;
-},{"./remoteparticipant":106,"./stats/statsreport":152,"./util":160,"./util/twilio-video-errors":172,"events":58}],109:[function(require,module,exports){
+},{"./remoteparticipant":106,"./stats/statsreport":162,"./util":170,"./util/twilio-video-errors":182,"events":58}],109:[function(require,module,exports){
 /* eslint consistent-return:0 */
 'use strict';
 
@@ -23740,6 +24271,7 @@ var TrackSignaling = require('./track');
  * A {@link LocalTrackPublication} implementation
  * @extends TrackSignaling
  * @property {?Error} error - non-null if publication failed
+ * @property {Track.ID} id
  */
 
 var LocalTrackPublicationSignaling = function (_TrackSignaling) {
@@ -23755,7 +24287,7 @@ var LocalTrackPublicationSignaling = function (_TrackSignaling) {
 
     var enabled = trackSender.kind === 'data' ? true : trackSender.track.enabled;
 
-    var _this = _possibleConstructorReturn(this, (LocalTrackPublicationSignaling.__proto__ || Object.getPrototypeOf(LocalTrackPublicationSignaling)).call(this, name, trackSender.id, trackSender.kind, enabled));
+    var _this = _possibleConstructorReturn(this, (LocalTrackPublicationSignaling.__proto__ || Object.getPrototypeOf(LocalTrackPublicationSignaling)).call(this, name, trackSender.kind, enabled));
 
     _this.setTrackTransceiver(trackSender);
     Object.defineProperties(_this, {
@@ -23768,6 +24300,10 @@ var LocalTrackPublicationSignaling = function (_TrackSignaling) {
         get: function get() {
           return this._error;
         }
+      },
+      id: {
+        enumerable: true,
+        value: trackSender.id
       }
     });
     return _this;
@@ -23829,6 +24365,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var StateMachine = require('../statemachine');
+var NetworkQualityStats = require('../stats/networkqualitystats');
 
 /*
 ParticipantSignaling States
@@ -23854,7 +24391,7 @@ var states = {
  * @property {?string} identity
  * @property {?Participant.SID} sid
  * @property {string} state - "connecting", "connected", or "disconnected"
- * @property {Map<string, TrackSignaling>} tracks
+ * @property {Map<Track.ID | Track.SID, TrackSignaling>} tracks
  * @emits ParticipantSignaling#networkQualityLevelChanged
  * @emits ParticipantSignaling#trackAdded
  * @emits ParticipantSignaling#trackRemoved
@@ -23880,7 +24417,7 @@ var ParticipantSignaling = function (_StateMachine) {
         value: null,
         writable: true
       },
-      _networkQualityLevels: {
+      _networkQualityStats: {
         value: null,
         writable: true
       },
@@ -23926,7 +24463,7 @@ var ParticipantSignaling = function (_StateMachine) {
      * @fires ParticipantSignaling#trackAdded
      */
     value: function addTrack(track) {
-      this.tracks.set(track.id, track);
+      this.tracks.set(track.id || track.sid, track);
       this.emit('trackAdded', track);
       return this;
     }
@@ -23957,7 +24494,7 @@ var ParticipantSignaling = function (_StateMachine) {
   }, {
     key: 'removeTrack',
     value: function removeTrack(track) {
-      var didDelete = this.tracks.delete(track.id);
+      var didDelete = this.tracks.delete(track.id || track.sid);
       if (didDelete) {
         this.emit('trackRemoved', track);
       }
@@ -23966,21 +24503,16 @@ var ParticipantSignaling = function (_StateMachine) {
 
     /**
      * @param {NetworkQualityLevel} networkQualityLevel
-     * @param {?NetworkQualityLevels} [networkQualityLevels=null] - deprecated;
-     *   the decomposed levels are only used for debugging and will be removed as
-     *   soon as we are confident in our implementation
+     * @param {?NetworkQualityLevels} [networkQualityLevels=null]
      * @returns {void}
      */
 
   }, {
     key: 'setNetworkQualityLevel',
     value: function setNetworkQualityLevel(networkQualityLevel, networkQualityLevels) {
-      if (networkQualityLevels) {
-        this._networkQualityLevels = networkQualityLevels;
-      }
-
       if (this._networkQualityLevel !== networkQualityLevel) {
         this._networkQualityLevel = networkQualityLevel;
+        this._networkQualityStats = networkQualityLevels && (networkQualityLevels.audio || networkQualityLevels.video) ? new NetworkQualityStats(networkQualityLevels) : null;
         this.emit('networkQualityLevelChanged');
       }
     }
@@ -24010,16 +24542,14 @@ var ParticipantSignaling = function (_StateMachine) {
     }
 
     /**
-     * Get the current {@link NetworkQualityLevels}, if any.
-     * @deprecated - the decomposed levels are only used for debugging and will be
-     *   removed as soon as we are confident in our implementation
-     * @returns {?NetworkQualityLevels} networkQualityLevels - initially null
+     * Get the current {@link NetworkQualityStats}
+     * @returns {?NetworkQualityStats} networkQualityStats - initially null
      */
 
   }, {
-    key: 'networkQualityLevels',
+    key: 'networkQualityStats',
     get: function get() {
-      return this._networkQualityLevels;
+      return this._networkQualityStats;
     }
   }]);
 
@@ -24043,7 +24573,7 @@ var ParticipantSignaling = function (_StateMachine) {
  */
 
 module.exports = ParticipantSignaling;
-},{"../statemachine":134}],112:[function(require,module,exports){
+},{"../statemachine":134,"../stats/networkqualitystats":149}],112:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -24192,14 +24722,13 @@ var RemoteTrackPublicationSignaling = function (_TrackSignaling) {
    * Construct a {@link RemoteTrackPublicationSignaling}.
    * @param {Track.SID} sid
    * @param {string} name
-   * @param {Track.ID} id
    * @param {Track.Kind} kind
    * @param {boolean} isEnabled
    */
-  function RemoteTrackPublicationSignaling(sid, name, id, kind, isEnabled) {
+  function RemoteTrackPublicationSignaling(sid, name, kind, isEnabled) {
     _classCallCheck(this, RemoteTrackPublicationSignaling);
 
-    var _this = _possibleConstructorReturn(this, (RemoteTrackPublicationSignaling.__proto__ || Object.getPrototypeOf(RemoteTrackPublicationSignaling)).call(this, name, id, kind, isEnabled));
+    var _this = _possibleConstructorReturn(this, (RemoteTrackPublicationSignaling.__proto__ || Object.getPrototypeOf(RemoteTrackPublicationSignaling)).call(this, name, kind, isEnabled));
 
     Object.defineProperties(_this, {
       _error: {
@@ -24528,7 +25057,6 @@ var _require = require('events'),
 /**
  * A {@link Track} implementation
  * @extends EventEmitter
- * @property {Track.ID} id
  * @property {Track.Kind} kind
  * @property {string} name
  */
@@ -24540,11 +25068,10 @@ var TrackSignaling = function (_EventEmitter) {
   /**
    * Construct a {@link TrackSignaling}.
    * @param {string} name
-   * @param {Track.ID} id
    * @param {Track.Kind} kind
    * @param {boolean} isEnabled
    */
-  function TrackSignaling(name, id, kind, isEnabled) {
+  function TrackSignaling(name, kind, isEnabled) {
     _classCallCheck(this, TrackSignaling);
 
     var _this = _possibleConstructorReturn(this, (TrackSignaling.__proto__ || Object.getPrototypeOf(TrackSignaling)).call(this));
@@ -24568,10 +25095,6 @@ var TrackSignaling = function (_EventEmitter) {
             sid = _sid;
           }
         }
-      },
-      id: {
-        enumerable: true,
-        value: id
       },
       kind: {
         enumerable: true,
@@ -24755,8 +25278,7 @@ function createCancelableRoomSignalingPromise(token, ua, localParticipant, iceSe
           networkQuality: options.networkQuality,
           iceServerSourceStatus: iceServerSource.status,
           insights: options.insights,
-          realm: options.realm,
-          sdpSemantics: options.sdpSemantics
+          realm: options.realm
         }, transportOptions);
 
         var Transport = options.Transport;
@@ -24810,7 +25332,7 @@ function createCancelableRoomSignalingPromise(token, ua, localParticipant, iceSe
 }
 
 module.exports = createCancelableRoomSignalingPromise;
-},{"../../util":160,"../../util/cancelablepromise":157,"../../util/twilio-video-errors":172,"./peerconnectionmanager":126,"./room":130,"./transport":132}],118:[function(require,module,exports){
+},{"../../util":170,"../../util/cancelablepromise":167,"../../util/twilio-video-errors":182,"./peerconnectionmanager":126,"./room":130,"./transport":132}],118:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -24984,7 +25506,7 @@ var IceBox = function () {
 }();
 
 module.exports = IceBox;
-},{"../../util/filter":159}],120:[function(require,module,exports){
+},{"../../util/filter":169}],120:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -25120,8 +25642,8 @@ var SignalingV2 = function (_Signaling) {
     }
   }, {
     key: 'createLocalParticipantSignaling',
-    value: function createLocalParticipantSignaling(encodingParameters) {
-      return new LocalParticipantV2(encodingParameters);
+    value: function createLocalParticipantSignaling(encodingParameters, networkQualityConfiguration) {
+      return new LocalParticipantV2(encodingParameters, networkQualityConfiguration);
     }
   }]);
 
@@ -25129,7 +25651,7 @@ var SignalingV2 = function (_Signaling) {
 }(Signaling);
 
 module.exports = SignalingV2;
-},{"../":109,"../../sip":133,"../../util":160,"../../util/constants":158,"./cancelableroomsignalingpromise":117,"./localparticipant":121,"./sipjsmediahandler":131}],121:[function(require,module,exports){
+},{"../":109,"../../sip":133,"../../util":170,"../../util/constants":168,"./cancelableroomsignalingpromise":117,"./localparticipant":121,"./sipjsmediahandler":131}],121:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -25147,6 +25669,7 @@ var LocalTrackPublicationV2 = require('./localtrackpublication');
 
 /**
  * @extends ParticipantSignaling
+ * @property {NetworkQualityConfigurationImpl} networkQualityConfiguration
  * @property {number} revision
  * @emits LocalParticipantV2#updated
  */
@@ -25157,9 +25680,10 @@ var LocalParticipantV2 = function (_ParticipantSignaling) {
   /**
    * Construct a {@link LocalParticipantV2}.
    * @param {EncodingParametersImpl} encodingParameters
+   * @param {NetworkQualityConfigurationImpl} networkQualityConfiguration
    * @param {object} [options]
    */
-  function LocalParticipantV2(encodingParameters, options) {
+  function LocalParticipantV2(encodingParameters, networkQualityConfiguration, options) {
     _classCallCheck(this, LocalParticipantV2);
 
     options = Object.assign({
@@ -25185,6 +25709,10 @@ var LocalParticipantV2 = function (_ParticipantSignaling) {
       _revision: {
         writable: true,
         value: 1
+      },
+      networkQualityConfiguration: {
+        enumerable: true,
+        value: networkQualityConfiguration
       },
       revision: {
         enumerable: true,
@@ -25343,6 +25871,18 @@ var LocalParticipantV2 = function (_ParticipantSignaling) {
       }
       return didDelete;
     }
+
+    /**
+     * Updates the verbosity of network quality information.
+     * @param {NetworkQualityConfiguration} networkQualityConfiguration
+     * @returns {void}
+     */
+
+  }, {
+    key: 'setNetworkQualityConfiguration',
+    value: function setNetworkQualityConfiguration(networkQualityConfiguration) {
+      this.networkQualityConfiguration.update(networkQualityConfiguration);
+    }
   }]);
 
   return LocalParticipantV2;
@@ -25481,7 +26021,7 @@ var LocalTrackPublicationV2 = function (_LocalTrackPublicatio) {
  */
 
 module.exports = LocalTrackPublicationV2;
-},{"../../util/twilio-video-errors":172,"../localtrackpublication":110}],123:[function(require,module,exports){
+},{"../../util/twilio-video-errors":182,"../localtrackpublication":110}],123:[function(require,module,exports){
 /* eslint callback-return:0 */
 'use strict';
 
@@ -25590,8 +26130,6 @@ var NetworkQualityMonitor = function (_EventEmitter) {
 
     /**
      * Get the current {@link NetworkQualityLevels}, if any.
-     * @deprecated - the decomposed levels are only used for debugging and will be
-     *   removed as soon as we are confident in our implementation
      * @returns {?NetworkQualityLevels} levels - initially null
      */
 
@@ -25599,6 +26137,17 @@ var NetworkQualityMonitor = function (_EventEmitter) {
     key: 'levels',
     get: function get() {
       return this._signaling.levels;
+    }
+
+    /**
+     * Get the current {@link NetworkQualityLevels} of remote participants, if any.
+     * @returns {Map<String, NetworkQualityLevels>} remoteLevels
+     */
+
+  }, {
+    key: 'remoteLevels',
+    get: function get() {
+      return this._signaling.remoteLevels;
     }
   }]);
 
@@ -25650,7 +26199,7 @@ function next(monitor) {
  */
 
 module.exports = NetworkQualityMonitor;
-},{"../../stats/peerconnectionreportfactory":142,"events":58}],124:[function(require,module,exports){
+},{"../../stats/peerconnectionreportfactory":152,"events":58}],124:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -25681,19 +26230,45 @@ var AsyncVar = require('../../util/asyncvar');
  */
 
 /**
- * @interface SendAndReceiveLevels
- * @deprecated - the decomposed levels are only used for debugging and will be
- *   removed as soon as we are confident in our implementation
+ * @interface LatencyStats
+ * @property {number} jitter
+ * @property {number} rtt
+ * @property {number} level
+ */
+
+/**
+ * @interface FractionLostStats
+ * @property {number} fractionLost
+ * @property {number} level
+ */
+
+/**
+ * @interface BandwidthStats
+ * @property {number} actual
+ * @property {number} available
+ * @property {number} level
+ */
+
+/**
+ * @interface SendOrRecvStats
+ * @property {BandwidthStats} bandwidth
+ * @property {FractionLostStats} fractionLost
+ * @property {LatencyStats} latency
+ */
+
+/**
+ * @interface MediaLevels
  * @property {number} send
+ * @property {SendOrRecvStats} sendStats
  * @property {number} recv
+ * @property {SendOrRecvStats} recvStats
  */
 
 /**
  * @interface NetworkQualityLevels
- * @deprecated - the decomposed levels are only used for debugging and will be
- *   removed as soon as we are confident in our implementation
- * @property {SendAndReceiveLevels} audio
- * @property {SendAndReceiveLevels} video
+ * @property {number} level
+ * @property {MediaLevels} audio
+ * @property {MediaLevels} video
  */
 
 /**
@@ -25703,7 +26278,7 @@ var AsyncVar = require('../../util/asyncvar');
 /**
  * @classdesc The {@link NetworkQualitySignaling} class allows submitting
  *   {@link NetworkQualityInputs} for computing {@link NetworkQualityLevel}. It
- *   does so by sending and receivin messages over a
+ *   does so by sending and receiving messages over a
  *   {@link MediaSignalingTransport}. The exact transport used depends on the
  *   topology of the {@link Room} that {@link NetworkQualitySignaling} is being
  *   used within: for P2P Rooms, we re-use the {@link TransportV2}; and for
@@ -25717,8 +26292,9 @@ var NetworkQualitySignaling = function (_EventEmitter) {
   /**
    * Construct a {@link NetworkQualitySignaling}.
    * @param {MediaSignalingTransport} mediaSignalingTransport
+   * @param {NetworkQualityConfigurationImpl} networkQualityConfiguration
    */
-  function NetworkQualitySignaling(mediaSignalingTransport) {
+  function NetworkQualitySignaling(mediaSignalingTransport, networkQualityConfiguration) {
     _classCallCheck(this, NetworkQualitySignaling);
 
     var _this = _possibleConstructorReturn(this, (NetworkQualitySignaling.__proto__ || Object.getPrototypeOf(NetworkQualitySignaling)).call(this));
@@ -25732,11 +26308,23 @@ var NetworkQualitySignaling = function (_EventEmitter) {
         value: null,
         writable: true
       },
+      _remoteLevels: {
+        value: new Map(),
+        writable: true
+      },
       _mediaSignalingTransport: {
         value: mediaSignalingTransport
       },
       _networkQualityInputs: {
         value: new AsyncVar()
+      },
+      _networkQualityReportLevels: {
+        get: function get() {
+          return {
+            reportLevel: networkQualityConfiguration.local,
+            remoteReportLevel: networkQualityConfiguration.remote
+          };
+        }
       }
     });
 
@@ -25774,6 +26362,7 @@ var NetworkQualitySignaling = function (_EventEmitter) {
     value: function _handleNetworkQualityMessage(message) {
       var _this2 = this;
 
+      var updated = false;
       var level = null;
       var local = message ? message.local : null;
       if (typeof local === 'number') {
@@ -25789,6 +26378,17 @@ var NetworkQualitySignaling = function (_EventEmitter) {
       }
       if (level !== null && this.level !== level) {
         this._level = level;
+        updated = true;
+      }
+      this._remoteLevels = message && message.remotes ? message.remotes.reduce(function (levels, obj) {
+        var oldObj = _this2._remoteLevels.get(obj.sid) || {};
+        if (oldObj.level !== obj.level) {
+          updated = true;
+        }
+        return levels.set(obj.sid, obj);
+      }, new Map()) : this._remoteLevels;
+
+      if (updated) {
         this.emit('updated');
       }
       setTimeout(function () {
@@ -25808,7 +26408,7 @@ var NetworkQualitySignaling = function (_EventEmitter) {
       var _this3 = this;
 
       return this._networkQualityInputs.take().then(function (networkQualityInputs) {
-        _this3._mediaSignalingTransport.publish(createNetworkQualityInputsMessage(networkQualityInputs));
+        _this3._mediaSignalingTransport.publish(createNetworkQualityInputsMessage(networkQualityInputs, _this3._networkQualityReportLevels));
       });
     }
 
@@ -25832,8 +26432,6 @@ var NetworkQualitySignaling = function (_EventEmitter) {
 
     /**
      * Get the current {@link NetworkQualityLevels}, if any.
-     * @deprecated - the decomposed levels are only used for debugging and will be
-     *  removed as soon as we are confident in our implementation
      * @returns {?NetworkQualityLevels} levels - initially null
      */
 
@@ -25841,6 +26439,17 @@ var NetworkQualitySignaling = function (_EventEmitter) {
     key: 'levels',
     get: function get() {
       return this._levels;
+    }
+
+    /**
+     * Get the current {@link NetworkQualityLevels} of remote participants, if any.
+     * @returns {Map<String, NetworkQualityLevels>} remoteLevels
+     */
+
+  }, {
+    key: 'remoteLevels',
+    get: function get() {
+      return this._remoteLevels;
     }
   }]);
 
@@ -25853,19 +26462,24 @@ var NetworkQualitySignaling = function (_EventEmitter) {
  */
 
 /**
+ * @typedef {object} NetworkQualityReportLevels
+ * @param {number} reportLevel
+ * @param {number} remoteReportLevel
+ */
+
+/**
  * @param {NetworkQualityInputs} networkQualityInputs
+ * @param {NetworkQualityReportLevels} networkQualityReportLevels
  * @returns {object} message
  */
 
 
-function createNetworkQualityInputsMessage(networkQualityInputs) {
-  return Object.assign({
-    type: 'network_quality'
-  }, networkQualityInputs);
+function createNetworkQualityInputsMessage(networkQualityInputs, networkQualityReportLevels) {
+  return Object.assign({ type: 'network_quality' }, networkQualityInputs, networkQualityReportLevels);
 }
 
 module.exports = NetworkQualitySignaling;
-},{"../../util/asyncvar":156,"events":58}],125:[function(require,module,exports){
+},{"../../util/asyncvar":166,"events":58}],125:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -25878,42 +26492,57 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var WebRTC = require('@twilio/webrtc');
-var DefaultMediaStream = WebRTC.MediaStream;
-var DefaultRTCIceCandidate = WebRTC.RTCIceCandidate;
-var DefaultRTCPeerConnection = WebRTC.RTCPeerConnection;
-var DefaultRTCSessionDescription = WebRTC.RTCSessionDescription;
-var getStatistics = WebRTC.getStats;
-var getMediaSections = require('../../util/sdp').getMediaSections;
-var guessBrowser = require('../../util').guessBrowser;
-var oncePerTick = require('../../util').oncePerTick;
-var setBitrateParameters = require('../../util/sdp').setBitrateParameters;
-var setCodecPreferences = require('../../util/sdp').setCodecPreferences;
-var setSimulcast = require('../../util/sdp').setSimulcast;
+var _require = require('@twilio/webrtc'),
+    DefaultMediaStream = _require.MediaStream,
+    DefaultRTCIceCandidate = _require.RTCIceCandidate,
+    DefaultRTCPeerConnection = _require.RTCPeerConnection,
+    DefaultRTCSessionDescription = _require.RTCSessionDescription,
+    getStatistics = _require.getStats;
+
+var _require2 = require('@twilio/webrtc/lib/util'),
+    guessBrowser = _require2.guessBrowser;
+
+var _require3 = require('@twilio/webrtc/lib/util/sdp'),
+    getSdpFormat = _require3.getSdpFormat;
+
+var _require4 = require('../../util/constants'),
+    DEFAULT_LOG_LEVEL = _require4.DEFAULT_LOG_LEVEL;
+
+var _require5 = require('../../util/sdp'),
+    getMediaSections = _require5.getMediaSections,
+    setBitrateParameters = _require5.setBitrateParameters,
+    setCodecPreferences = _require5.setCodecPreferences,
+    setSimulcast = _require5.setSimulcast,
+    unifiedPlanAddOrRewriteNewTrackIds = _require5.unifiedPlanAddOrRewriteNewTrackIds,
+    unifiedPlanAddOrRewriteTrackIds = _require5.unifiedPlanAddOrRewriteTrackIds;
+
+var _require6 = require('../../util/twilio-video-errors'),
+    MediaClientLocalDescFailedError = _require6.MediaClientLocalDescFailedError,
+    MediaClientRemoteDescFailedError = _require6.MediaClientRemoteDescFailedError;
+
+var _require7 = require('../../util'),
+    buildLogLevels = _require7.buildLogLevels,
+    makeUUID = _require7.makeUUID,
+    oncePerTick = _require7.oncePerTick;
+
 var IceBox = require('./icebox');
-var MediaClientLocalDescFailedError = require('../../util/twilio-video-errors').MediaClientLocalDescFailedError;
-var MediaClientRemoteDescFailedError = require('../../util/twilio-video-errors').MediaClientRemoteDescFailedError;
 var DataTrackReceiver = require('../../data/receiver');
 var MediaTrackReceiver = require('../../media/track/receiver');
 var StateMachine = require('../../statemachine');
-
-var _require = require('../../util'),
-    buildLogLevels = _require.buildLogLevels,
-    getSdpFormat = _require.getSdpFormat,
-    makeUUID = _require.makeUUID;
-
-var _require2 = require('../../util/constants'),
-    DEFAULT_LOG_LEVEL = _require2.DEFAULT_LOG_LEVEL;
-
 var Log = require('../../util/log');
 var IdentityTrackMatcher = require('../../util/sdp/trackmatcher/identity');
 var OrderedTrackMatcher = require('../../util/sdp/trackmatcher/ordered');
 var MIDTrackMatcher = require('../../util/sdp/trackmatcher/mid');
 var workaroundIssue8329 = require('../../util/sdp/issue8329');
 
-var isChrome = guessBrowser() === 'chrome';
-var isFirefox = guessBrowser() === 'firefox';
-var isSafari = guessBrowser() === 'safari';
+var guess = guessBrowser();
+var isChrome = guess === 'chrome';
+var isFirefox = guess === 'firefox';
+var isSafari = guess === 'safari';
+var sdpFormat = getSdpFormat();
+var isUnifiedPlan = sdpFormat === 'unified';
+
+var firefoxMajorVersion = isFirefox ? parseInt(navigator.userAgent.match(/Firefox\/(\d+)/)[1], 10) : null;
 
 /*
 PeerConnectionV2 States
@@ -25983,19 +26612,18 @@ var PeerConnectionV2 = function (_StateMachine) {
     var logLevels = buildLogLevels(options.logLevel);
     var RTCPeerConnection = options.RTCPeerConnection;
     var peerConnection = new RTCPeerConnection(configuration, options.chromeSpecificConstraints);
-    var sdpFormat = getSdpFormat(options.sdpSemantics);
 
-    var localMediaStream = isFirefox && RTCPeerConnection.prototype.addTransceiver ? null : new options.MediaStream();
+    var localMediaStream = isUnifiedPlan && RTCPeerConnection.prototype.addTransceiver ? null : new options.MediaStream();
 
     if (options.dummyAudioMediaStreamTrack) {
-      peerConnection.addTrack(options.dummyAudioMediaStreamTrack, localMediaStream || new MediaStream());
+      peerConnection.addTrack(options.dummyAudioMediaStreamTrack, localMediaStream || new options.MediaStream());
     }
 
     // NOTE(mroberts): We do this to workaround the following bug:
     //
     //   https://bugzilla.mozilla.org/show_bug.cgi?id=1481335
     //
-    if (isFirefox) {
+    if (isFirefox && firefoxMajorVersion < 65) {
       peerConnection.createDataChannel(makeUUID());
     }
 
@@ -26053,7 +26681,7 @@ var PeerConnectionV2 = function (_StateMachine) {
       _mediaTrackReceivers: {
         value: new Set()
       },
-      _needsInitialAnswer: {
+      _needsAnswer: {
         writable: true,
         value: false
       },
@@ -26081,9 +26709,6 @@ var PeerConnectionV2 = function (_StateMachine) {
       _remoteCandidates: {
         writable: true,
         value: new IceBox()
-      },
-      _sdpFormat: {
-        value: sdpFormat
       },
       _setBitrateParameters: {
         value: options.setBitrateParameters
@@ -26205,7 +26830,7 @@ var PeerConnectionV2 = function (_StateMachine) {
      * Create an answer and set it on the {@link PeerConnectionV2}.
      * @private
      * @param {RTCSessionDescriptionInit} offer
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>}
      */
 
   }, {
@@ -26230,7 +26855,10 @@ var PeerConnectionV2 = function (_StateMachine) {
       }).then(function () {
         return _this3._checkIceBox(offer);
       }).then(function () {
-        return _this3._peerConnection.localDescription ? _this3._maybeReoffer(_this3._peerConnection.localDescription) : Promise.resolve();
+        return _this3._queuedDescription && _this3._updateDescription(_this3._queuedDescription);
+      }).then(function () {
+        _this3._queuedDescription = null;
+        return _this3._maybeReoffer(_this3._peerConnection.localDescription);
       }).catch(function (error) {
         throw error instanceof MediaClientRemoteDescFailedError ? error : new MediaClientLocalDescFailedError();
       });
@@ -26297,9 +26925,10 @@ var PeerConnectionV2 = function (_StateMachine) {
       return Promise.resolve().then(function () {
         return _this5._setLocalDescription({ type: 'rollback' });
       }).then(function () {
+        _this5._needsAnswer = false;
         return _this5._answer(offer);
-      }).then(function () {
-        return _this5._offer();
+      }).then(function (didReoffer) {
+        return didReoffer ? Promise.resolve() : _this5._offer();
       });
     }
 
@@ -26363,7 +26992,6 @@ var PeerConnectionV2 = function (_StateMachine) {
     /**
      * Handle a signaling state change event.
      * @private
-     * @param {Event}
      * @returns {void}
      */
 
@@ -26395,8 +27023,22 @@ var PeerConnectionV2 = function (_StateMachine) {
         // support, we have to use the same hacky solution as Safari. Revisit
         // this when RTCRtpTransceivers and MIDs land. We should be able to use
         // the same technique as Firefox.
-        : isSafari || this._sdpFormat === 'unified' ? new OrderedTrackMatcher() : new IdentityTrackMatcher();
+        : isSafari || isUnifiedPlan ? new OrderedTrackMatcher() : new IdentityTrackMatcher();
       }
+
+      // NOTE(mmalavalli): For unified plan sdps, calling addTransceiver with
+      // the same MediaStreamTrack a second time will generate sdps where the
+      // MediaStreamTrack ID does not match the MSID in the corresponding
+      // m= section. Due to this, MIDTrackMatcher#update will not update the
+      // mid corresponding to the MediaStreamTrack ID. Therefore, "trackSubscribed"
+      // will not be fired for the corresponding RemoteTrack.
+      //
+      // Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=894231
+      // Firefox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1498036
+      //
+      // TODO(mmalavalli): Revisit this either when the bugs are fixed or when we
+      // get clarification about spec-compliant behavior of addTransceiver.
+      //
       this._trackMatcher.update(sdp);
 
       var mediaStreamTrack = event.track;
@@ -26414,8 +27056,8 @@ var PeerConnectionV2 = function (_StateMachine) {
     /**
      * Conditionally re-offer.
      * @private
-     * @param {RTCSessionDescriptionInit} localDescription
-     * @returns {Promise<void>}
+     * @param {?RTCSessionDescriptionInit} localDescription
+     * @returns {Promise<boolean>}
      */
 
   }, {
@@ -26423,38 +27065,43 @@ var PeerConnectionV2 = function (_StateMachine) {
     value: function _maybeReoffer(localDescription) {
       var shouldReoffer = this._shouldOffer;
 
-      // NOTE(mmalavalli): In Firefox, if the remote RTCPeerConnection sends
-      // an offer with fewer audio m= lines than the number of audio RTCRTPSenders
-      // in the local RTCPeerConnection, then the local RTCPeerConnection creates
-      // an answer with the same number of audio m= lines as in the offer. This
-      // behavior was triggered by the removal of 'offerToReceiveAudio' from the
-      // default RTCOfferOptions. Ideally, the local RTCPeerConnection should create
-      // an answer with the same number of audio m= lines as the number of
-      // RTCRTPSenders. In order to achieve this,the local RTCPeerConnection
-      // initiates renegotiation.
-      //
-      // We can reduce the number of cases where renegotiation is needed by
-      // re-introducing 'offerToReceiveAudio' to the default RTCOfferOptions with a
-      // value > 1.
-      if (isFirefox) {
-        var senders = this._peerConnection.getSenders().filter(function (sender) {
-          return sender.track;
-        });
-        shouldReoffer = ['audio', 'video'].reduce(function (shouldOffer, kind) {
-          var mediaSections = getMediaSections(localDescription.sdp, kind, '(sendrecv|sendonly)');
-          var sendersOfKind = senders.filter(isSenderOfKind.bind(null, kind));
-          return shouldOffer || mediaSections.length < sendersOfKind.length;
-        }, shouldReoffer);
+      if (localDescription && localDescription.sdp) {
+        // NOTE(mmalavalli): For "unified-plan" sdps, if the remote RTCPeerConnection sends
+        // an offer with fewer audio m= lines than the number of audio RTCRTPSenders
+        // in the local RTCPeerConnection, then the local RTCPeerConnection creates
+        // an answer with the same number of audio m= lines as in the offer. This
+        // behavior was triggered by the removal of 'offerToReceiveAudio' from the
+        // default RTCOfferOptions. Ideally, the local RTCPeerConnection should create
+        // an answer with the same number of audio m= lines as the number of
+        // RTCRTPSenders. In order to achieve this,the local RTCPeerConnection
+        // initiates renegotiation.
+        //
+        // We can reduce the number of cases where renegotiation is needed by
+        // re-introducing 'offerToReceiveAudio' to the default RTCOfferOptions with a
+        // value > 1.
+        if (isUnifiedPlan && localDescription.type === 'answer') {
+          var senders = this._peerConnection.getSenders().filter(function (sender) {
+            return sender.track;
+          });
+          shouldReoffer = ['audio', 'video'].reduce(function (shouldOffer, kind) {
+            var mediaSections = getMediaSections(localDescription.sdp, kind, '(sendrecv|sendonly)');
+            var sendersOfKind = senders.filter(isSenderOfKind.bind(null, kind));
+            return shouldOffer || mediaSections.length < sendersOfKind.length;
+          }, shouldReoffer);
+        }
+
+        // NOTE(mroberts): We also need to re-offer if we have a DataTrack to share
+        // but no m= application section.
+        var hasDataTrack = this._dataChannels.size > 0;
+        var hasApplicationMediaSection = getMediaSections(localDescription.sdp, 'application').length > 0;
+        var needsApplicationMediaSection = hasDataTrack && !hasApplicationMediaSection;
+        shouldReoffer = shouldReoffer || needsApplicationMediaSection;
       }
 
-      // NOTE(mroberts): We also need to re-offer if we have a DataTrack to share
-      // but no m= application section.
-      var hasDataTrack = this._dataChannels.size > 0;
-      var hasApplicationMediaSection = getMediaSections(localDescription.sdp, 'application').length > 0;
-      var needsApplicationMediaSection = hasDataTrack && !hasApplicationMediaSection;
-      shouldReoffer = shouldReoffer || needsApplicationMediaSection;
-
-      return shouldReoffer ? this._offer() : Promise.resolve();
+      var promise = shouldReoffer ? this._offer() : Promise.resolve();
+      return promise.then(function () {
+        return shouldReoffer;
+      });
     }
 
     /**
@@ -26469,6 +27116,7 @@ var PeerConnectionV2 = function (_StateMachine) {
       var _this7 = this;
 
       var offerOptions = Object.assign({}, this._offerOptions);
+      this._needsAnswer = true;
       if (this._shouldRestartIce) {
         this._shouldRestartIce = false;
         this._isRestartingIce = true;
@@ -26488,12 +27136,66 @@ var PeerConnectionV2 = function (_StateMachine) {
         _this7._shouldOffer = false;
         if (!_this7._negotiationRole) {
           _this7._negotiationRole = 'offerer';
-          _this7._needsInitialAnswer = true;
         }
         return _this7._setLocalDescription({
           type: 'offer',
           sdp: updatedSdp
         });
+      });
+    }
+
+    /**
+     * Add or rewrite local MediaStreamTrack IDs in the given Unified Plan RTCSessionDescription.
+     * @private
+     * @param {RTCSessionDescription} description
+     * @return {RTCSessionDescription}
+     */
+
+  }, {
+    key: '_addOrRewriteLocalTrackIds',
+    value: function _addOrRewriteLocalTrackIds(description) {
+      var transceivers = this._peerConnection.getTransceivers();
+      var activeTransceivers = transceivers.filter(function (_ref) {
+        var sender = _ref.sender,
+            stopped = _ref.stopped;
+        return !stopped && sender && sender.track;
+      });
+
+      // NOTE(mmalavalli): There is no guarantee that MediaStreamTrack IDs will be present in
+      // SDPs, and even if they are, there is no guarantee that they will be the same as the
+      // actual MediaStreamTrack IDs. So, we add or re-write the actual MediaStreamTrack IDs
+      // to the assigned m= sections here.
+      var assignedTransceivers = activeTransceivers.filter(function (_ref2) {
+        var mid = _ref2.mid;
+        return mid;
+      });
+      var midsToTrackIds = new Map(assignedTransceivers.map(function (_ref3) {
+        var mid = _ref3.mid,
+            sender = _ref3.sender;
+        return [mid, sender.track.id];
+      }));
+      var sdp1 = unifiedPlanAddOrRewriteTrackIds(description.sdp, midsToTrackIds);
+
+      // NOTE(mmalavalli): Chrome and Safari do not apply the offer until they get an answer.
+      // So, we add or re-write the actual MediaStreamTrack IDs to the unassigned m= sections here.
+      var unassignedTransceivers = activeTransceivers.filter(function (_ref4) {
+        var mid = _ref4.mid;
+        return !mid;
+      });
+      var newTrackIdsByKind = new Map(['audio', 'video'].map(function (kind) {
+        return [kind, unassignedTransceivers.filter(function (_ref5) {
+          var sender = _ref5.sender;
+          return sender.track.kind === kind;
+        }).map(function (_ref6) {
+          var sender = _ref6.sender;
+          return sender.track.id;
+        })];
+      }));
+      var sdp2 = unifiedPlanAddOrRewriteNewTrackIds(sdp1, midsToTrackIds, newTrackIdsByKind);
+
+      return new this._RTCSessionDescription({
+        sdp: sdp2,
+        type: description.type
       });
     }
 
@@ -26509,7 +27211,6 @@ var PeerConnectionV2 = function (_StateMachine) {
     value: function _setLocalDescription(description) {
       var _this8 = this;
 
-      var revision = description.revision;
       var vp8SimulcastRequested = this._preferredVideoCodecs.some(function (codecSettings) {
         return codecSettings.codec.toLowerCase() === 'vp8' && codecSettings.simulcast;
       });
@@ -26521,13 +27222,10 @@ var PeerConnectionV2 = function (_StateMachine) {
           // properties are immutable.
           description = {
             type: description.type,
-            sdp: isChrome && vp8SimulcastRequested ? _this8._setSimulcast(description.sdp, _this8._trackIdsToAttributes) : description.sdp
+            sdp: (isChrome || isSafari) && vp8SimulcastRequested ? _this8._setSimulcast(description.sdp, sdpFormat, _this8._trackIdsToAttributes) : description.sdp
           };
         }
         description = new _this8._RTCSessionDescription(description);
-        if (description.type === 'answer') {
-          _this8._lastStableDescriptionRevision = revision;
-        }
         return _this8._peerConnection.setLocalDescription(description);
       }).catch(function (error) {
         _this8._log.warn('Calling setLocalDescription with an RTCSessionDescription of type "' + description.type + '" failed with the error "' + error.message + '".');
@@ -26537,10 +27235,12 @@ var PeerConnectionV2 = function (_StateMachine) {
         throw new MediaClientLocalDescFailedError();
       }).then(function () {
         if (description.type !== 'rollback') {
-          _this8._localDescription = description;
+          _this8._localDescription = isUnifiedPlan ? _this8._addOrRewriteLocalTrackIds(description) : description;
           _this8._localCandidates = [];
           if (description.type === 'offer') {
             _this8._descriptionRevision++;
+          } else if (description.type === 'answer') {
+            _this8._lastStableDescriptionRevision = _this8._descriptionRevision;
           }
           _this8._localUfrag = getUfrag(description);
           _this8.emit('description', _this8.getState());
@@ -26577,7 +27277,7 @@ var PeerConnectionV2 = function (_StateMachine) {
           _this9._log.debug('An ICE restart was in-progress and is now completed');
           _this9._isRestartingIce = false;
         }
-        if (_this9._sdpFormat === 'unified' && _this9._peerConnection.getTransceivers()) {
+        if (isUnifiedPlan) {
           _this9._peerConnection.getTransceivers().forEach(function (transceiver) {
             if (shouldStopTransceiver(description.sdp, transceiver)) {
               transceiver.stop();
@@ -26618,7 +27318,7 @@ var PeerConnectionV2 = function (_StateMachine) {
         case 'create-offer':
           if (description.revision <= this._lastStableDescriptionRevision) {
             return Promise.resolve();
-          } else if (this._needsInitialAnswer) {
+          } else if (this._needsAnswer) {
             this._queuedDescription = description;
             return Promise.resolve();
           }
@@ -26629,7 +27329,7 @@ var PeerConnectionV2 = function (_StateMachine) {
             return Promise.resolve();
           }
           if (this._peerConnection.signalingState === 'have-local-offer') {
-            if (this._needsInitialAnswer) {
+            if (this._needsAnswer && this._descriptionRevision === 1) {
               this._queuedDescription = description;
               return Promise.resolve();
             }
@@ -26637,7 +27337,7 @@ var PeerConnectionV2 = function (_StateMachine) {
             return this._handleGlare(description);
           }
           this._descriptionRevision = description.revision;
-          return this._answer(description);
+          return this._answer(description).then(function () {});
         default:
         // Do nothing.
       }
@@ -26645,22 +27345,18 @@ var PeerConnectionV2 = function (_StateMachine) {
       // Handle answer or pranswer.
       var revision = description.revision;
       return Promise.resolve().then(function () {
-        if (description.type === 'answer') {
-          _this10._lastStableDescriptionRevision = revision;
-        }
         return _this10._setRemoteDescription(description);
       }).catch(function () {
         throw new MediaClientRemoteDescFailedError();
       }).then(function () {
-        if (description.type === 'answer') {
-          _this10._needsInitialAnswer = false;
-        }
+        _this10._lastStableDescriptionRevision = revision;
+        _this10._needsAnswer = false;
         return _this10._checkIceBox(description);
       }).then(function () {
         return _this10._queuedDescription && _this10._updateDescription(_this10._queuedDescription);
       }).then(function () {
         _this10._queuedDescription = null;
-        return _this10._peerConnection.localDescription ? _this10._maybeReoffer(_this10._peerConnection.localDescription) : Promise.resolve();
+        return _this10._maybeReoffer(_this10._peerConnection.localDescription).then(function () {});
       });
     }
 
@@ -26793,14 +27489,15 @@ var PeerConnectionV2 = function (_StateMachine) {
     value: function offer() {
       var _this11 = this;
 
-      if (this._needsInitialAnswer || this._isRestartingIce) {
+      if (this._needsAnswer || this._isRestartingIce) {
         this._shouldOffer = true;
         return Promise.resolve();
       }
 
       return this.bracket('offering', function (key) {
         _this11.transition('updating', key);
-        return _this11._offer().then(function () {
+        var promise = _this11._needsAnswer || _this11._isRestartingIce ? Promise.resolve() : _this11._offer();
+        return promise.then(function () {
           _this11.tryTransition('open', key);
         }, function (error) {
           _this11.tryTransition('open', key);
@@ -27019,14 +27716,15 @@ function getTransceiverDirection(sdp, mid) {
 
 /**
  * @param {string} sdp
- * @returns {Array<string>} mids
+ * @returns {{audio: Array<string>, video: Array<string>}} mids
  */
 function getMids(sdp) {
-  return sdp.match(/\r\na=mid:.+$/mg).map(function (match) {
-    return match.split(':')[1];
-  }).filter(function (mid) {
-    return mid;
-  });
+  return ['audio', 'video'].reduce(function (mids, kind) {
+    mids[kind] = getMediaSections(sdp, kind).map(function (section) {
+      return section.match(/^a=mid:(.+)$/m)[1];
+    });
+    return mids;
+  }, {});
 }
 
 /**
@@ -27042,7 +27740,7 @@ function shouldStopTransceiver(sdp, transceiver) {
   // NOTE(mroberts): We don't want to stop the initial two audio and video
   // RTCRtpTransceivers that everyone negotiates with.
   var mids = getMids(sdp);
-  if (transceiver.mid === mids[0] || transceiver.mid === mids[1]) {
+  if (transceiver.mid === mids.audio[0] || transceiver.mid === mids.video[0]) {
     return false;
   }
 
@@ -27061,7 +27759,7 @@ function shouldStopTransceiver(sdp, transceiver) {
 }
 
 module.exports = PeerConnectionV2;
-},{"../../data/receiver":67,"../../media/track/receiver":91,"../../statemachine":134,"../../util":160,"../../util/constants":158,"../../util/log":163,"../../util/sdp":164,"../../util/sdp/issue8329":165,"../../util/sdp/trackmatcher/identity":167,"../../util/sdp/trackmatcher/mid":168,"../../util/sdp/trackmatcher/ordered":169,"../../util/twilio-video-errors":172,"./icebox":119,"@twilio/webrtc":41}],126:[function(require,module,exports){
+},{"../../data/receiver":66,"../../media/track/receiver":90,"../../statemachine":134,"../../util":170,"../../util/constants":168,"../../util/log":173,"../../util/sdp":174,"../../util/sdp/issue8329":175,"../../util/sdp/trackmatcher/identity":177,"../../util/sdp/trackmatcher/mid":178,"../../util/sdp/trackmatcher/ordered":179,"../../util/twilio-video-errors":182,"./icebox":119,"@twilio/webrtc":41,"@twilio/webrtc/lib/util":54,"@twilio/webrtc/lib/util/sdp":56}],126:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -27076,12 +27774,18 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var _require = require('@twilio/webrtc/lib/util'),
+    guessBrowser = _require.guessBrowser;
+
 var PeerConnectionV2 = require('./peerconnection');
 var MediaTrackSender = require('../../media/track/sender');
 var QueueingEventEmitter = require('../../queueingeventemitter');
 var util = require('../../util');
 
-var isFirefox = util.guessBrowser() === 'firefox';
+var _require2 = require('../../util/twilio-video-errors'),
+    MediaConnectionError = _require2.MediaConnectionError;
+
+var isFirefox = guessBrowser() === 'firefox';
 
 /**
  * {@link PeerConnectionManager} manages multiple {@link PeerConnectionV2}s.
@@ -27100,6 +27804,7 @@ var PeerConnectionManager = function (_QueueingEventEmitter) {
    * @param {IceServerSource} iceServerSource
    * @param {EncodingParametersImpl} encodingParameters
    * @param {PreferredCodecs} preferredCodecs
+   * @param {object} options
    */
   function PeerConnectionManager(iceServerSource, encodingParameters, preferredCodecs, options) {
     _classCallCheck(this, PeerConnectionManager);
@@ -27215,7 +27920,12 @@ var PeerConnectionManager = function (_QueueingEventEmitter) {
           dummyAudioMediaStreamTrack: this._dummyAudioTrackSender ? this._dummyAudioTrackSender.track : null,
           offerOptions: this._offerOptions
         }, configuration);
-        peerConnection = new _PeerConnectionV(id, this._encodingParameters, this._preferredCodecs, options);
+
+        try {
+          peerConnection = new _PeerConnectionV(id, this._encodingParameters, this._preferredCodecs, options);
+        } catch (e) {
+          throw new MediaConnectionError();
+        }
 
         this._peerConnections.set(peerConnection.id, peerConnection);
         peerConnection.on('candidates', this.queue.bind(this, 'candidates'));
@@ -27593,7 +28303,7 @@ function updateIceConnectionState(pcm) {
 }
 
 module.exports = PeerConnectionManager;
-},{"../../media/track/sender":100,"../../queueingeventemitter":105,"../../util":160,"../../webaudio/audiocontext":174,"./peerconnection":125}],127:[function(require,module,exports){
+},{"../../media/track/sender":99,"../../queueingeventemitter":105,"../../util":170,"../../util/twilio-video-errors":182,"../../webaudio/audiocontext":184,"./peerconnection":125,"@twilio/webrtc/lib/util":54}],127:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -27666,8 +28376,6 @@ module.exports = RecordingV2;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -27733,7 +28441,7 @@ var RemoteParticipantV2 = function (_RemoteParticipantSig) {
     key: '_getOrCreateTrack',
     value: function _getOrCreateTrack(trackState) {
       var RemoteTrackPublicationV2 = this._RemoteTrackPublicationV2;
-      var track = this.tracks.get(trackState.id);
+      var track = this.tracks.get(trackState.sid);
       if (!track) {
         track = new RemoteTrackPublicationV2(trackState);
         this.addTrack(track);
@@ -27750,6 +28458,8 @@ var RemoteParticipantV2 = function (_RemoteParticipantSig) {
   }, {
     key: 'update',
     value: function update(participantState) {
+      var _this2 = this;
+
       if (this.revision !== null && participantState.revision <= this.revision) {
         return this;
       }
@@ -27758,35 +28468,21 @@ var RemoteParticipantV2 = function (_RemoteParticipantSig) {
       var tracksToKeep = new Set();
 
       participantState.tracks.forEach(function (trackState) {
-        var track = this._getOrCreateTrack(trackState);
+        var track = _this2._getOrCreateTrack(trackState);
         track.update(trackState);
         tracksToKeep.add(track);
-      }, this);
+      });
 
       this.tracks.forEach(function (track) {
         if (!tracksToKeep.has(track)) {
-          this.removeTrack(track);
+          _this2.removeTrack(track);
         }
-      }, this);
+      });
 
       if (participantState.state === 'disconnected' && this.state === 'connected') {
         this.preempt('disconnected');
       }
 
-      return this;
-    }
-
-    /**
-     * Add the {@link RemoteTrackPublicationV2} to the {@link RemoteParticipantV2}.
-     * @param {RemoteTrackPublicationV2} track
-     * @returns {this}
-     */
-
-  }, {
-    key: 'addTrack',
-    value: function addTrack(track) {
-      _get(RemoteParticipantV2.prototype.__proto__ || Object.getPrototypeOf(RemoteParticipantV2.prototype), 'addTrack', this).call(this, track);
-      this._getTrackReceiver(track.id).then(track.setTrackTransceiver.bind(track));
       return this;
     }
   }]);
@@ -27822,7 +28518,7 @@ var RemoteTrackPublicationV2 = function (_RemoteTrackPublicati) {
   function RemoteTrackPublicationV2(track) {
     _classCallCheck(this, RemoteTrackPublicationV2);
 
-    return _possibleConstructorReturn(this, (RemoteTrackPublicationV2.__proto__ || Object.getPrototypeOf(RemoteTrackPublicationV2)).call(this, track.sid, track.name, track.id, track.kind, track.enabled));
+    return _possibleConstructorReturn(this, (RemoteTrackPublicationV2.__proto__ || Object.getPrototypeOf(RemoteTrackPublicationV2)).call(this, track.sid, track.name, track.kind, track.enabled));
   }
 
   /**
@@ -27891,6 +28587,7 @@ var RoomV2 = function (_RoomSignaling) {
     _classCallCheck(this, RoomV2);
 
     options = Object.assign({
+      DominantSpeakerSignaling: DominantSpeakerSignaling,
       NetworkQualityMonitor: NetworkQualityMonitor,
       NetworkQualitySignaling: NetworkQualitySignaling,
       RecordingSignaling: RecordingV2,
@@ -27904,6 +28601,9 @@ var RoomV2 = function (_RoomSignaling) {
       _dominantSpeakerSignaling: {
         value: null,
         writable: true
+      },
+      _DominantSpeakerSignaling: {
+        value: options.DominantSpeakerSignaling
       },
       _dominantSpeakerSignalingPromise: {
         value: null,
@@ -27925,6 +28625,9 @@ var RoomV2 = function (_RoomSignaling) {
       _networkQualityMonitorPromise: {
         value: null,
         writable: true
+      },
+      _networkQualityConfiguration: {
+        value: localParticipant.networkQualityConfiguration
       },
       _peerConnectionManager: {
         value: peerConnectionManager
@@ -28136,34 +28839,34 @@ var RoomV2 = function (_RoomSignaling) {
         roomState.subscribed.tracks.forEach(function (trackState) {
           if (trackState.id) {
             this._subscriptionFailures.delete(trackState.sid);
-            this._subscribed.set(trackState.id, trackState.sid);
+            this._subscribed.set(trackState.sid, trackState.id);
           } else if (trackState.error && !this._subscriptionFailures.has(trackState.sid)) {
             this._subscriptionFailures.set(trackState.sid, trackState.error);
           }
         }, this);
 
-        var subscribedTrackIds = new Set(roomState.subscribed.tracks.filter(function (trackState) {
+        var subscribedTrackSids = new Set(roomState.subscribed.tracks.filter(function (trackState) {
           return !!trackState.id;
         }).map(function (trackState) {
-          return trackState.id;
+          return trackState.sid;
         }));
 
-        this._subscribed.forEach(function (trackSid, trackId) {
-          if (!subscribedTrackIds.has(trackId)) {
-            _this3._subscribed.delete(trackId);
+        this._subscribed.forEach(function (trackId, trackSid) {
+          if (!subscribedTrackSids.has(trackSid)) {
+            _this3._subscribed.delete(trackSid);
           }
         });
       }
 
       // TODO(mroberts): Remove me once the Server is fixed.
       (roomState.participants || []).forEach(function (participantState) {
-        if (participantState.sid === this.localParticipant.sid || this._disconnectedParticipantSids.has(participantState.sid)) {
+        if (participantState.sid === _this3.localParticipant.sid || _this3._disconnectedParticipantSids.has(participantState.sid)) {
           return;
         }
-        var participant = this._getOrCreateRemoteParticipant(participantState);
+        var participant = _this3._getOrCreateRemoteParticipant(participantState);
         participant.update(participantState);
         participantsToKeep.add(participant);
-      }, this);
+      });
 
       handleSubscriptions(this);
 
@@ -28224,7 +28927,15 @@ var RoomV2 = function (_RoomSignaling) {
           // NOTE(mroberts): _teardownDominantSpeakerSignaling was called.
           return;
         }
-        var dominantSpeakerSignaling = new DominantSpeakerSignaling(receiver.toDataTransport());
+
+        // NOTE(mpatwardhan): The underlying RTCDataChannel is closed whenever
+        // the VMS instance fails over, and a new RTCDataChannel is created in order
+        // to resume sending Dominant Speaker updates.
+        receiver.once('close', function () {
+          return _this4._teardownDominantSpeakerSignaling();
+        });
+
+        var dominantSpeakerSignaling = new _this4._DominantSpeakerSignaling(receiver.toDataTransport());
         _this4._setDominantSpeakerSignaling(dominantSpeakerSignaling);
       });
       this._dominantSpeakerSignalingPromise = dominantSpeakerSignalingPromise;
@@ -28243,6 +28954,7 @@ var RoomV2 = function (_RoomSignaling) {
     value: function _setupDataTransportBackedNetworkQualityMonitor(id) {
       var _this5 = this;
 
+      var self = this;
       this._teardownNetworkQualityMonitor();
       var networkQualityMonitorPromise = this._getTrackReceiver(id).then(function (receiver) {
         if (receiver.kind !== 'data') {
@@ -28251,7 +28963,15 @@ var RoomV2 = function (_RoomSignaling) {
           // NOTE(mroberts): _teardownNetworkQualityMonitor was called.
           return;
         }
-        var networkQualitySignaling = new _this5._NetworkQualitySignaling(receiver.toDataTransport());
+
+        // NOTE(mpatwardhan): The underlying RTCDataChannel is closed whenever
+        // the VMS instance fails over, and new a RTCDataChannel is created in order
+        // to resume exchanging Network Quality messages.
+        receiver.once('close', function () {
+          return _this5._teardownNetworkQualityMonitor();
+        });
+
+        var networkQualitySignaling = new _this5._NetworkQualitySignaling(receiver.toDataTransport(), self._networkQualityConfiguration);
         var networkQualityMonitor = new _this5._NetworkQualityMonitor(_this5._peerConnectionManager, networkQualitySignaling);
         _this5._setNetworkQualityMonitor(networkQualityMonitor);
       });
@@ -28278,6 +28998,12 @@ var RoomV2 = function (_RoomSignaling) {
           return;
         }
         _this7.localParticipant.setNetworkQualityLevel(networkQualityMonitor.level, networkQualityMonitor.levels);
+        _this7.participants.forEach(function (participant) {
+          var levels = networkQualityMonitor.remoteLevels.get(participant.sid);
+          if (levels) {
+            participant.setNetworkQualityLevel(levels.level, levels);
+          }
+        });
       });
       networkQualityMonitor.start();
     }
@@ -28378,7 +29104,14 @@ function filterAndAddLocalTrackSids(roomV2, localTrackStats) {
  * @returns {Array<RemoteTrackStats>}
  */
 function filterAndAddRemoteTrackSids(roomV2, remoteTrackStats) {
-  return filterAndAddTrackSids(roomV2._subscribed, remoteTrackStats);
+  var idToSid = new Map(Array.from(roomV2._subscribed.entries()).map(function (_ref3) {
+    var _ref4 = _slicedToArray(_ref3, 2),
+        sid = _ref4[0],
+        id = _ref4[1];
+
+    return [id, sid];
+  }));
+  return filterAndAddTrackSids(idToSid, remoteTrackStats);
 }
 
 /**
@@ -28435,8 +29168,15 @@ function handlePeerConnectionEvents(roomV2, peerConnectionManager) {
 
   peerConnectionManager.on('iceConnectionStateChanged', function () {
     roomV2.emit('mediaConnectionStateChanged');
-    if (roomV2.mediaConnectionState === 'failed' && roomV2.localParticipant.networkQualityLevel !== null) {
-      roomV2.localParticipant.setNetworkQualityLevel(0);
+    if (roomV2.mediaConnectionState === 'failed') {
+      if (roomV2.localParticipant.networkQualityLevel !== null) {
+        roomV2.localParticipant.setNetworkQualityLevel(0);
+      }
+      roomV2.participants.forEach(function (participant) {
+        if (participant.networkQualityLevel !== null) {
+          participant.setNetworkQualityLevel(0);
+        }
+      });
     }
   });
 }
@@ -28502,29 +29242,28 @@ function periodicallyPublishStats(roomV2, localParticipant, transport, intervalM
 }
 
 function handleSubscriptions(room) {
-  var remoteTracks = new Map(util.flatMap(room.participants, function (participant) {
+  var trackSignalings = new Map(util.flatMap(room.participants, function (participant) {
     return Array.from(participant.tracks.values()).map(function (track) {
       return [track.sid, track];
     });
   }));
 
   room._subscriptionFailures.forEach(function (error, trackSid) {
-    var remoteTrack = remoteTracks.get(trackSid);
-    if (remoteTrack) {
+    var trackSignaling = trackSignalings.get(trackSid);
+    if (trackSignaling) {
       room._subscriptionFailures.delete(trackSid);
-      remoteTrack.subscribeFailed(createTwilioError(error.code, error.message));
+      trackSignaling.subscribeFailed(createTwilioError(error.code, error.message));
     }
   });
 
-  var subscribedTrackIds = new Set(Array.from(room._subscribed.keys()));
-  remoteTracks.forEach(function (remoteTrack) {
-    if (!subscribedTrackIds.has(remoteTrack.id)) {
-      remoteTrack.setTrackTransceiver(null);
-      return;
+  trackSignalings.forEach(function (trackSignaling) {
+    var trackId = room._subscribed.get(trackSignaling.sid);
+    if (!trackId || trackSignaling.isSubscribed && trackSignaling.trackTransceiver.id !== trackId) {
+      trackSignaling.setTrackTransceiver(null);
     }
-    if (!remoteTrack.isSubscribed) {
-      room._getTrackReceiver(remoteTrack.id).then(function (trackReceiver) {
-        return remoteTrack.setTrackTransceiver(trackReceiver);
+    if (trackId) {
+      room._getTrackReceiver(trackId).then(function (trackReceiver) {
+        return trackSignaling.setTrackTransceiver(trackReceiver);
       });
     }
   });
@@ -28580,7 +29319,7 @@ function replaceNullsWithDefaults(activeIceCandidatePair, peerConnectionId) {
 }
 
 module.exports = RoomV2;
-},{"../../stats/statsreport":152,"../../util":160,"../../util/twilio-video-errors":172,"../room":115,"./dominantspeakersignaling":118,"./networkqualitymonitor":123,"./networkqualitysignaling":124,"./recording":127,"./remoteparticipant":128}],131:[function(require,module,exports){
+},{"../../stats/statsreport":162,"../../util":170,"../../util/twilio-video-errors":182,"../room":115,"./dominantspeakersignaling":118,"./networkqualitymonitor":123,"./networkqualitysignaling":124,"./recording":127,"./remoteparticipant":128}],131:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28718,6 +29457,9 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var _require = require('@twilio/webrtc/lib/util/sdp'),
+    getSdpFormat = _require.getSdpFormat;
+
 var constants = require('../../util/constants');
 var packageInfo = require('../../../package.json');
 var InsightsPublisher = require('../../util/insightspublisher');
@@ -28727,19 +29469,19 @@ var DefaultSIPJSMediaHandler = require('./sipjsmediahandler');
 var StateMachine = require('../../statemachine');
 var util = require('../../util');
 
-var _require = require('../../util/twilio-video-errors'),
-    RoomCompletedError = _require.RoomCompletedError;
-
 var _require2 = require('../../util/twilio-video-errors'),
-    SignalingConnectionDisconnectedError = _require2.SignalingConnectionDisconnectedError,
-    SignalingConnectionError = _require2.SignalingConnectionError,
-    SignalingConnectionTimeoutError = _require2.SignalingConnectionTimeoutError,
-    SignalingIncomingMessageInvalidError = _require2.SignalingIncomingMessageInvalidError,
-    createTwilioError = _require2.createTwilioError;
+    RoomCompletedError = _require2.RoomCompletedError;
 
+var _require3 = require('../../util/twilio-video-errors'),
+    SignalingConnectionDisconnectedError = _require3.SignalingConnectionDisconnectedError,
+    SignalingConnectionError = _require3.SignalingConnectionError,
+    SignalingConnectionTimeoutError = _require3.SignalingConnectionTimeoutError,
+    SignalingIncomingMessageInvalidError = _require3.SignalingIncomingMessageInvalidError,
+    createTwilioError = _require3.createTwilioError;
+
+var RSP_VERSION = 2;
 var SDK_NAME = packageInfo.name + '.js';
 var SDK_VERSION = packageInfo.version;
-var VERSION = 1;
 
 /*
 Transport States
@@ -28799,8 +29541,8 @@ var Transport = function (_StateMachine) {
     options = Object.assign({
       InsightsPublisher: InsightsPublisher,
       NullInsightsPublisher: NullInsightsPublisher,
-      sdpSemantics: null,
       SIPJSMediaHandler: DefaultSIPJSMediaHandler,
+      sdpFormat: getSdpFormat(),
       userAgent: util.getUserAgent()
     }, options);
 
@@ -28816,8 +29558,8 @@ var Transport = function (_StateMachine) {
       _eventPublisher: {
         value: new EventPublisher(accessToken, SDK_NAME, SDK_VERSION, options.environment, options.realm, eventPublisherOptions)
       },
-      _sdpSemantics: {
-        value: options.sdpSemantics
+      _sdpFormat: {
+        value: options.sdpFormat
       },
       _updatesReceived: {
         value: []
@@ -28855,7 +29597,7 @@ var Transport = function (_StateMachine) {
         this._session.terminate({
           body: JSON.stringify({
             type: 'disconnect',
-            version: VERSION
+            version: RSP_VERSION
           }),
           extraHeaders: ['Content-Type: application/room-signaling+json']
         });
@@ -28877,7 +29619,7 @@ var Transport = function (_StateMachine) {
     value: function publish(update) {
       update = Object.assign({
         type: 'update',
-        version: VERSION
+        version: RSP_VERSION
       }, update);
       switch (this.state) {
         case 'connected':
@@ -28948,7 +29690,7 @@ function createSession(transport, name, accessToken, localParticipant, peerConne
         if (transport.state === 'disconnected') {
           return {
             type: 'disconnect',
-            version: VERSION
+            version: RSP_VERSION
           };
         }
         var type = {
@@ -28960,7 +29702,7 @@ function createSession(transport, name, accessToken, localParticipant, peerConne
           name: name,
           participant: localParticipant.getState(),
           type: type,
-          version: VERSION
+          version: RSP_VERSION
         };
 
         if (message.type === 'connect') {
@@ -28983,7 +29725,7 @@ function createSession(transport, name, accessToken, localParticipant, peerConne
           }
         }
 
-        var sdpFormat = util.getSdpFormat(transport._sdpSemantics);
+        var sdpFormat = transport._sdpFormat;
         if (type === 'connect' && sdpFormat) {
           message.format = sdpFormat;
         }
@@ -29100,7 +29842,7 @@ function reduceUpdates(updates) {
     return reduced;
   }, {
     type: 'update',
-    version: VERSION
+    version: RSP_VERSION
   });
 }
 
@@ -29338,7 +30080,7 @@ function setupEventListeners(transport, session, ua) {
 }
 
 module.exports = Transport;
-},{"../../../package.json":177,"../../sip":133,"../../statemachine":134,"../../util":160,"../../util/constants":158,"../../util/insightspublisher":161,"../../util/insightspublisher/null":162,"../../util/twilio-video-errors":172,"./sipjsmediahandler":131}],133:[function(require,module,exports){
+},{"../../../package.json":187,"../../sip":133,"../../statemachine":134,"../../util":170,"../../util/constants":168,"../../util/insightspublisher":171,"../../util/insightspublisher/null":172,"../../util/twilio-video-errors":182,"./sipjsmediahandler":131,"@twilio/webrtc/lib/util/sdp":56}],133:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -29356,7 +30098,7 @@ module.exports = require('@twilio/sip.js/src/SIP')({
   Transport: Transport
 });
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"@twilio/sip.js/src/SIP":23,"@twilio/sip.js/src/Transport":32,"ws":178}],134:[function(require,module,exports){
+},{"@twilio/sip.js/src/SIP":23,"@twilio/sip.js/src/Transport":32,"ws":188}],134:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -29858,7 +30600,7 @@ function createUnreachableError(here, there) {
 }
 
 module.exports = StateMachine;
-},{"./util":160,"events":58}],135:[function(require,module,exports){
+},{"./util":170,"events":58}],135:[function(require,module,exports){
 /* eslint no-undefined:0 */
 'use strict';
 
@@ -30112,7 +30854,7 @@ var LocalTrackStats = function (_TrackStats) {
 }(TrackStats);
 
 module.exports = LocalTrackStats;
-},{"./trackstats":154}],140:[function(require,module,exports){
+},{"./trackstats":164}],140:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -30202,6 +30944,418 @@ var LocalVideoTrackStats = function (_LocalTrackStats) {
 
 module.exports = LocalVideoTrackStats;
 },{"./localtrackstats":139}],141:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var NetworkQualityMediaStats = require('./networkqualitymediastats');
+
+/**
+ * {@link NetworkQualityMediaStats} for a {@link Participant}'s audio.
+ */
+
+var NetworkQualityAudioStats = function (_NetworkQualityMediaS) {
+  _inherits(NetworkQualityAudioStats, _NetworkQualityMediaS);
+
+  /**
+   * Construct a {@link NetworkQualityAudioStats}.
+   * @param {MediaLevels} mediaLevels
+   */
+  function NetworkQualityAudioStats(mediaLevels) {
+    _classCallCheck(this, NetworkQualityAudioStats);
+
+    return _possibleConstructorReturn(this, (NetworkQualityAudioStats.__proto__ || Object.getPrototypeOf(NetworkQualityAudioStats)).call(this, mediaLevels));
+  }
+
+  return NetworkQualityAudioStats;
+}(NetworkQualityMediaStats);
+
+module.exports = NetworkQualityAudioStats;
+},{"./networkqualitymediastats":145}],142:[function(require,module,exports){
+'use strict';
+
+/**
+ * Bandwidth network quality statistics.
+ * @property {?number} actual - actual bandwidth, in bytes
+ * @property {?number} available - available bandwidth, in bytes
+ * @property {?NetworkQualityLevel} level - {@link NetworkQualityLevel} for bandwidth
+ */
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var NetworkQualityBandwidthStats =
+/**
+ * Construct a {@link NetworkQualityBandwidthStats}.
+ * @param {BandwidthStats} bandwidthStats
+ */
+function NetworkQualityBandwidthStats(_ref) {
+  var _ref$actual = _ref.actual,
+      actual = _ref$actual === undefined ? null : _ref$actual,
+      _ref$available = _ref.available,
+      available = _ref$available === undefined ? null : _ref$available,
+      _ref$level = _ref.level,
+      level = _ref$level === undefined ? null : _ref$level;
+
+  _classCallCheck(this, NetworkQualityBandwidthStats);
+
+  Object.defineProperties(this, {
+    actual: {
+      value: actual,
+      enumerable: true
+    },
+    available: {
+      value: available,
+      enumerable: true
+    },
+    level: {
+      value: level,
+      enumerable: true
+    }
+  });
+};
+
+module.exports = NetworkQualityBandwidthStats;
+},{}],143:[function(require,module,exports){
+'use strict';
+
+/**
+ * Fraction lost network quality statistics.
+ * @property {?number} fractionLost - packets lost
+ * @property {?NetworkQualityLevel} level - {@link NetworkQualityLevel} for fraction lost
+ */
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var NetworkQualityFractionLostStats =
+/**
+ * Construct a {@link NetworkQualityFractionLostStats}.
+ * @param {FractionLostStats} fractionLostStats
+ */
+function NetworkQualityFractionLostStats(_ref) {
+  var _ref$fractionLost = _ref.fractionLost,
+      fractionLost = _ref$fractionLost === undefined ? null : _ref$fractionLost,
+      _ref$level = _ref.level,
+      level = _ref$level === undefined ? null : _ref$level;
+
+  _classCallCheck(this, NetworkQualityFractionLostStats);
+
+  Object.defineProperties(this, {
+    fractionLost: {
+      value: fractionLost,
+      enumerable: true
+    },
+    level: {
+      value: level,
+      enumerable: true
+    }
+  });
+};
+
+module.exports = NetworkQualityFractionLostStats;
+},{}],144:[function(require,module,exports){
+'use strict';
+
+/**
+ * Latency network quality statistics.
+ * @property {?number} jitter - media jitter in seconds
+ * @property {?number} rtt - round trip time in seconds
+ * @property {?NetworkQualityLevel} level - {@link NetworkQualityLevel} for latency
+ */
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var NetworkQualityLatencyStats =
+/**
+ * Construct a {@link NetworkQualityLatencyStats}.
+ * @param {LatencyStats} latencyStats
+ */
+function NetworkQualityLatencyStats(_ref) {
+  var _ref$jitter = _ref.jitter,
+      jitter = _ref$jitter === undefined ? null : _ref$jitter,
+      _ref$rtt = _ref.rtt,
+      rtt = _ref$rtt === undefined ? null : _ref$rtt,
+      _ref$level = _ref.level,
+      level = _ref$level === undefined ? null : _ref$level;
+
+  _classCallCheck(this, NetworkQualityLatencyStats);
+
+  Object.defineProperties(this, {
+    jitter: {
+      value: jitter,
+      enumerable: true
+    },
+    rtt: {
+      value: rtt,
+      enumerable: true
+    },
+    level: {
+      value: level,
+      enumerable: true
+    }
+  });
+};
+
+module.exports = NetworkQualityLatencyStats;
+},{}],145:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var NetworkQualitySendStats = require('./networkqualitysendstats');
+var NetworkQualityRecvStats = require('./networkqualityrecvstats');
+
+/**
+ * Network quality statistics shared between a {@link Participant}'s audio or video.
+ * @property {NetworkQualityLevel} send - {@link NetworkQualityLevel} of the
+ *  {@link Participant}'s published audio or video
+ * @property {number} recv - {@link NetworkQualityLevel} of the
+ *  {@link Participant}'s subscribed audio or video
+ * @property {?NetworkQualitySendOrRecvStats} sendStats - {@link NetworkQualitySendOrRecvStats}
+ *   based on which {@link NetworkQualityMediaStats}<code style="padding:0 0">#send</code>
+ *   is calculated
+ * @property {?NetworkQualitySendOrRecvStats} recvStats - {@link NetworkQualitySendOrRecvStats}
+ *   based on which {@link NetworkQualityMediaStats}<code style="padding:0 0">#recv</code>
+ *   is calculated
+ */
+
+var NetworkQualityMediaStats =
+/**
+ * Construct a {@link NetworkQualityMediaStats}.
+ * @param {MediaLevels} mediaLevels
+ */
+function NetworkQualityMediaStats(_ref) {
+  var send = _ref.send,
+      recv = _ref.recv,
+      _ref$sendStats = _ref.sendStats,
+      sendStats = _ref$sendStats === undefined ? null : _ref$sendStats,
+      _ref$recvStats = _ref.recvStats,
+      recvStats = _ref$recvStats === undefined ? null : _ref$recvStats;
+
+  _classCallCheck(this, NetworkQualityMediaStats);
+
+  Object.defineProperties(this, {
+    send: {
+      value: send,
+      enumerable: true
+    },
+    recv: {
+      value: recv,
+      enumerable: true
+    },
+    sendStats: {
+      value: sendStats ? new NetworkQualitySendStats(sendStats) : null,
+      enumerable: true
+    },
+    recvStats: {
+      value: recvStats ? new NetworkQualityRecvStats(recvStats) : null,
+      enumerable: true
+    }
+  });
+};
+
+module.exports = NetworkQualityMediaStats;
+},{"./networkqualityrecvstats":146,"./networkqualitysendstats":148}],146:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var NetworkQualitySendOrRecvStats = require('./networkqualitysendorrecvstats');
+
+/**
+ * {@link NetworkQualitySendOrRecvStats} based on which a {@link Participant}'s
+ * {@link NetworkQualityMediaStats}<code style="padding:0 0">#recv</code> is calculated.
+ */
+
+var NetworkQualityRecvStats = function (_NetworkQualitySendOr) {
+  _inherits(NetworkQualityRecvStats, _NetworkQualitySendOr);
+
+  /**
+   * Construct a {@link NetworkQualityRecvStats}.
+   * @param {SendOrRecvStats} sendOrRecvStats
+   */
+  function NetworkQualityRecvStats(sendOrRecvStats) {
+    _classCallCheck(this, NetworkQualityRecvStats);
+
+    return _possibleConstructorReturn(this, (NetworkQualityRecvStats.__proto__ || Object.getPrototypeOf(NetworkQualityRecvStats)).call(this, sendOrRecvStats));
+  }
+
+  return NetworkQualityRecvStats;
+}(NetworkQualitySendOrRecvStats);
+
+module.exports = NetworkQualityRecvStats;
+},{"./networkqualitysendorrecvstats":147}],147:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var NetworkQualityBandwidthStats = require('./networkqualitybandwidthstats');
+var NetworkQualityFractionLostStats = require('./networkqualityfractionloststats');
+var NetworkQualityLatencyStats = require('./networkqualitylatencystats');
+
+/**
+ * Network quality statistics shared between {@link NetworkQualitySendStats} and
+ * {@link NetworkQualityRecvStats} based on which a {@link Participant}'s
+ * {@link NetworkQualityMediaStats}<code style="padding:0 0">#send</code> or
+ * {@link NetworkQualityMediaStats}<code style="padding:0 0">#recv</code> is calculated.
+ * @property {?NetworkQualityBandwidthStats} bandwidth - bandwidth statistics
+ * @property {?NetworkQualityLatencyStats} latency - latency statistics
+ * @property {?NetworkQualityFractionLostStats} fractionLost - fraction lost statistics
+ */
+
+var NetworkQualitySendOrRecvStats =
+/**
+ * Construct a {@link NetworkQualitySendOrRecvStats}.
+ * @param {SendOrRecvStats} sendOrRecvStats
+ */
+function NetworkQualitySendOrRecvStats(_ref) {
+  var _ref$bandwidth = _ref.bandwidth,
+      bandwidth = _ref$bandwidth === undefined ? null : _ref$bandwidth,
+      _ref$fractionLost = _ref.fractionLost,
+      fractionLost = _ref$fractionLost === undefined ? null : _ref$fractionLost,
+      _ref$latency = _ref.latency,
+      latency = _ref$latency === undefined ? null : _ref$latency;
+
+  _classCallCheck(this, NetworkQualitySendOrRecvStats);
+
+  Object.defineProperties(this, {
+    bandwidth: {
+      value: bandwidth ? new NetworkQualityBandwidthStats(bandwidth) : null,
+      enumerable: true
+    },
+    fractionLost: {
+      value: fractionLost ? new NetworkQualityFractionLostStats(fractionLost) : null,
+      enumerable: true
+    },
+    latency: {
+      value: latency ? new NetworkQualityLatencyStats(latency) : null,
+      enumerable: true
+    }
+  });
+};
+
+module.exports = NetworkQualitySendOrRecvStats;
+},{"./networkqualitybandwidthstats":142,"./networkqualityfractionloststats":143,"./networkqualitylatencystats":144}],148:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var NetworkQualitySendOrRecvStats = require('./networkqualitysendorrecvstats');
+
+/**
+ * {@link NetworkQualitySendOrRecvStats} based on which a {@link Participant}'s
+ * {@link NetworkQualityMediaStats}<code style="padding:0 0">#send</code> is calculated.
+ */
+
+var NetworkQualitySendStats = function (_NetworkQualitySendOr) {
+  _inherits(NetworkQualitySendStats, _NetworkQualitySendOr);
+
+  /**
+   * Construct a {@link NetworkQualitySendStats}.
+   * @param {SendOrRecvStats} sendOrRecvStats
+   */
+  function NetworkQualitySendStats(sendOrRecvStats) {
+    _classCallCheck(this, NetworkQualitySendStats);
+
+    return _possibleConstructorReturn(this, (NetworkQualitySendStats.__proto__ || Object.getPrototypeOf(NetworkQualitySendStats)).call(this, sendOrRecvStats));
+  }
+
+  return NetworkQualitySendStats;
+}(NetworkQualitySendOrRecvStats);
+
+module.exports = NetworkQualitySendStats;
+},{"./networkqualitysendorrecvstats":147}],149:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var NetworkQualityAudioStats = require('./networkqualityaudiostats');
+var NetworkQualityVideoStats = require('./networkqualityvideostats');
+
+/**
+ * Network quality statistics for a {@link Participant}.
+ * @property {NetworkQualityLevel} level - {@link NetworkQualityLevel} of the {@link Participant}
+ * @property {?NetworkQualityAudioStats} audio - {@link NetworkQualityMediaStats}
+ *   for audio; <code>null</code> if {@link NetworkQualityVerbosity} is {@link NetworkQualityVerbosity}<code style="padding:0 0">#minimal</code>
+ *   or below
+ * @property {?NetworkQualityVideoStats} video - {@link NetworkQualityMediaStats}
+ *   for video; <code>null</code> if {@link NetworkQualityVerbosity} is {@link NetworkQualityVerbosity}<code style="padding:0 0">#minimal</code>
+ *   or below
+ */
+
+var NetworkQualityStats =
+/**
+ * Construct a {@link NetworkQualityStats}.
+ * @param {NetworkQualityLevels} networkQualityLevels
+ */
+function NetworkQualityStats(_ref) {
+  var level = _ref.level,
+      audio = _ref.audio,
+      video = _ref.video;
+
+  _classCallCheck(this, NetworkQualityStats);
+
+  Object.defineProperties(this, {
+    level: {
+      value: level,
+      enumerable: true
+    },
+    audio: {
+      value: audio ? new NetworkQualityAudioStats(audio) : null,
+      enumerable: true
+    },
+    video: {
+      value: video ? new NetworkQualityVideoStats(video) : null,
+      enumerable: true
+    }
+  });
+};
+
+module.exports = NetworkQualityStats;
+},{"./networkqualityaudiostats":141,"./networkqualityvideostats":150}],150:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var NetworkQualityMediaStats = require('./networkqualitymediastats');
+
+/**
+ * {@link NetworkQualityMediaStats} for a {@link Participant}'s video.
+ */
+
+var NetworkQualityVideoStats = function (_NetworkQualityMediaS) {
+  _inherits(NetworkQualityVideoStats, _NetworkQualityMediaS);
+
+  /**
+   * Construct a {@link NetworkQualityVideoStats}.
+   * @param {MediaLevels} mediaLevels
+   */
+  function NetworkQualityVideoStats(mediaLevels) {
+    _classCallCheck(this, NetworkQualityVideoStats);
+
+    return _possibleConstructorReturn(this, (NetworkQualityVideoStats.__proto__ || Object.getPrototypeOf(NetworkQualityVideoStats)).call(this, mediaLevels));
+  }
+
+  return NetworkQualityVideoStats;
+}(NetworkQualityMediaStats);
+
+module.exports = NetworkQualityVideoStats;
+},{"./networkqualitymediastats":145}],151:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30300,7 +31454,7 @@ var PeerConnectionReport = function () {
 }();
 
 module.exports = PeerConnectionReport;
-},{"./receiverreport":143,"./senderreport":150}],142:[function(require,module,exports){
+},{"./receiverreport":153,"./senderreport":160}],152:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -30828,7 +31982,7 @@ function updateChrome(factory) {
 }
 
 module.exports = PeerConnectionReportFactory;
-},{"./icereportfactory":137,"./peerconnectionreport":141,"./receiverreportfactory":144,"./senderreportfactory":151}],143:[function(require,module,exports){
+},{"./icereportfactory":137,"./peerconnectionreport":151,"./receiverreportfactory":154,"./senderreportfactory":161}],153:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30976,7 +32130,7 @@ var ReceiverReport = function (_SenderOrReceiverRepo) {
 }(SenderOrReceiverReport);
 
 module.exports = ReceiverReport;
-},{"./average":135,"./senderorreceiverreport":148,"./sum":153}],144:[function(require,module,exports){
+},{"./average":135,"./senderorreceiverreport":158,"./sum":163}],154:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31042,7 +32196,7 @@ var ReceiverReportFactory = function (_SenderOrReceiverRepo) {
 }(SenderOrReceiverReportFactory);
 
 module.exports = ReceiverReportFactory;
-},{"./receiverreport":143,"./senderorreceiverreportfactory":149}],145:[function(require,module,exports){
+},{"./receiverreport":153,"./senderorreceiverreportfactory":159}],155:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -31089,7 +32243,7 @@ var RemoteAudioTrackStats = function (_RemoteTrackStats) {
 }(RemoteTrackStats);
 
 module.exports = RemoteAudioTrackStats;
-},{"./remotetrackstats":146}],146:[function(require,module,exports){
+},{"./remotetrackstats":156}],156:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -31136,7 +32290,7 @@ var RemoteTrackStats = function (_TrackStats) {
 }(TrackStats);
 
 module.exports = RemoteTrackStats;
-},{"./trackstats":154}],147:[function(require,module,exports){
+},{"./trackstats":164}],157:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -31199,7 +32353,7 @@ var RemoteVideoTrackStats = function (_RemoteTrackStats) {
 }(RemoteTrackStats);
 
 module.exports = RemoteVideoTrackStats;
-},{"./remotetrackstats":146}],148:[function(require,module,exports){
+},{"./remotetrackstats":156}],158:[function(require,module,exports){
 'use strict';
 
 /**
@@ -31237,7 +32391,7 @@ function SenderOrReceiverReport(id, trackId, bitrate) {
 };
 
 module.exports = SenderOrReceiverReport;
-},{}],149:[function(require,module,exports){
+},{}],159:[function(require,module,exports){
 'use strict';
 
 /**
@@ -31277,7 +32431,7 @@ function SenderOrReceiverReportFactory(id, trackId, initialStats) {
 };
 
 module.exports = SenderOrReceiverReportFactory;
-},{}],150:[function(require,module,exports){
+},{}],160:[function(require,module,exports){
 /* eslint no-undefined:0 */
 'use strict';
 
@@ -31377,7 +32531,7 @@ var SenderReport = function (_SenderOrReceiverRepo) {
 }(SenderOrReceiverReport);
 
 module.exports = SenderReport;
-},{"./average":135,"./senderorreceiverreport":148,"./sum":153}],151:[function(require,module,exports){
+},{"./average":135,"./senderorreceiverreport":158,"./sum":163}],161:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31443,7 +32597,7 @@ var SenderReportFactory = function (_SenderOrReceiverRepo) {
 }(SenderOrReceiverReportFactory);
 
 module.exports = SenderReportFactory;
-},{"./senderorreceiverreportfactory":149,"./senderreport":150}],152:[function(require,module,exports){
+},{"./senderorreceiverreportfactory":159,"./senderreport":160}],162:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -31507,7 +32661,7 @@ function StatsReport(peerConnectionId, statsResponse) {
 };
 
 module.exports = StatsReport;
-},{"./localaudiotrackstats":138,"./localvideotrackstats":140,"./remoteaudiotrackstats":145,"./remotevideotrackstats":147}],153:[function(require,module,exports){
+},{"./localaudiotrackstats":138,"./localvideotrackstats":140,"./remoteaudiotrackstats":155,"./remotevideotrackstats":157}],163:[function(require,module,exports){
 'use strict';
 
 /**
@@ -31522,7 +32676,7 @@ function sum(xs) {
 }
 
 module.exports = sum;
-},{}],154:[function(require,module,exports){
+},{}],164:[function(require,module,exports){
 'use strict';
 
 /**
@@ -31582,7 +32736,7 @@ function TrackStats(trackId, statsReport) {
 };
 
 module.exports = TrackStats;
-},{}],155:[function(require,module,exports){
+},{}],165:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -31631,7 +32785,7 @@ var TrackTransceiver = function (_EventEmitter) {
 }(EventEmitter);
 
 module.exports = TrackTransceiver;
-},{"events":58}],156:[function(require,module,exports){
+},{"events":58}],166:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31719,7 +32873,7 @@ var AsyncVar = function () {
 }();
 
 module.exports = AsyncVar;
-},{"./":160}],157:[function(require,module,exports){
+},{"./":170}],167:[function(require,module,exports){
 'use strict';
 
 /**
@@ -31867,7 +33021,7 @@ var CancelablePromise = function () {
 }();
 
 module.exports = CancelablePromise;
-},{}],158:[function(require,module,exports){
+},{}],168:[function(require,module,exports){
 'use strict';
 
 module.exports.DEFAULT_ENVIRONMENT = 'prod';
@@ -31940,7 +33094,11 @@ module.exports.typeErrors = {
     return new TypeError(name + ' must be specified');
   }
 };
-},{}],159:[function(require,module,exports){
+
+module.exports.DEFAULT_NQ_LEVEL_LOCAL = 1;
+module.exports.DEFAULT_NQ_LEVEL_REMOTE = 0;
+module.exports.MAX_NQ_LEVEL = 3;
+},{}],169:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -32005,8 +33163,7 @@ var Filter = function () {
 }();
 
 module.exports = Filter;
-},{}],160:[function(require,module,exports){
-/* globals mozRTCPeerConnection */
+},{}],170:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -32140,24 +33297,6 @@ function flatMap(list, mapFn) {
  */
 function getUserAgent() {
   return typeof navigator !== 'undefined' && navigator.userAgent ? navigator.userAgent : 'Unknown';
-}
-
-/**
- * Guess the browser.
- * @returns {?string} browser - "chrome", "firefox", "safari", or null
- */
-function guessBrowser() {
-  if (typeof webkitRTCPeerConnection !== 'undefined') {
-    return 'chrome';
-  } else if (typeof mozRTCPeerConnection !== 'undefined') {
-    return 'firefox';
-  } else if (typeof RTCPeerConnection !== 'undefined') {
-    if (getUserAgent().match(/AppleWebKit\/(\d+)\./)) {
-      return 'safari';
-    }
-    // NOTE(mroberts): Could be Edge.
-  }
-  return null;
 }
 
 /**
@@ -32443,38 +33582,15 @@ function validateLocalTrack(track, options) {
 }
 
 /**
- * Use unified plan SDP format on Firefox
- * @param {?SdpSemantics} [sdpSemantics]
- * @returns {string} SDP format
+ * Checks if the a number is in the range [min, max].
+ * @private
+ * @param {num} num
+ * @param {number} min
+ * @param {number} max
+ * @return {boolean}
  */
-function getSdpFormat(sdpSemantics) {
-  return typeof mozRTCPeerConnection !== 'undefined' || sdpSemantics === 'unified-plan' && checkIfSdpSemanticsIsSupported() ? 'unified' : 'planb';
-}
-
-// NOTE(mroberts): We need to cache this result so that we don't create too many
-// RTCPeerConnections.
-var sdpSemanticsIsSupported = void 0;
-
-/**
- * Check whether or not `sdpSemantics` is supported.
- * @returns {boolean}
- */
-function checkIfSdpSemanticsIsSupported() {
-  if (typeof sdpSemanticsIsSupported === 'boolean') {
-    return sdpSemanticsIsSupported;
-  }
-  if (typeof RTCPeerConnection === 'undefined') {
-    sdpSemanticsIsSupported = false;
-    return sdpSemanticsIsSupported;
-  }
-  try {
-    new RTCPeerConnection({ sdpSemantics: 'bogus' });
-    sdpSemanticsIsSupported = false;
-    return sdpSemanticsIsSupported;
-  } catch (error) {
-    sdpSemanticsIsSupported = true;
-    return sdpSemanticsIsSupported;
-  }
+function inRange(num, min, max) {
+  return min <= num && num <= max;
 }
 
 exports.constants = constants;
@@ -32486,7 +33602,7 @@ exports.difference = difference;
 exports.filterObject = filterObject;
 exports.flatMap = flatMap;
 exports.getUserAgent = getUserAgent;
-exports.guessBrowser = guessBrowser;
+exports.inRange = inRange;
 exports.makeClientSIPURI = makeClientSIPURI;
 exports.makeServerSIPURI = makeServerSIPURI;
 exports.makeUUID = makeUUID;
@@ -32501,8 +33617,7 @@ exports.buildLogLevels = buildLogLevels;
 exports.trackClass = trackClass;
 exports.trackPublicationClass = trackPublicationClass;
 exports.validateLocalTrack = validateLocalTrack;
-exports.getSdpFormat = getSdpFormat;
-},{"./constants":158}],161:[function(require,module,exports){
+},{"./constants":168}],171:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -32792,7 +33907,7 @@ function reconnect(publisher, token, sdkName, sdkVersion, options) {
 
 module.exports = InsightsPublisher;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":160,"events":58,"ws":178}],162:[function(require,module,exports){
+},{"..":170,"events":58,"ws":188}],172:[function(require,module,exports){
 // TODO(mroberts): This should be described as implementing some
 // InsightsPublisher interface.
 'use strict';
@@ -32849,7 +33964,7 @@ var InsightsPublisher = function () {
 }();
 
 module.exports = InsightsPublisher;
-},{}],163:[function(require,module,exports){
+},{}],173:[function(require,module,exports){
 /* eslint new-cap:0, no-console:0 */
 'use strict';
 
@@ -33151,8 +34266,10 @@ function validateLogLevels(levels) {
 }
 
 module.exports = Log;
-},{"./constants":158}],164:[function(require,module,exports){
+},{"./constants":168}],174:[function(require,module,exports){
 'use strict';
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var difference = require('../').difference;
 var flatMap = require('../').flatMap;
@@ -33221,6 +34338,17 @@ function createPtToCodecName(mediaSection) {
     var codecName = matches ? matches[1].toLowerCase() : ptToFixedBitrateAudioCodecName[pt] ? ptToFixedBitrateAudioCodecName[pt].toLowerCase() : '';
     return ptToCodecName.set(pt, codecName);
   }, new Map());
+}
+
+/**
+ * Get the MID for the given m= section.
+ * @param {string} mediaSection
+ * @return {?string}
+ */
+function getMidForMediaSection(mediaSection) {
+  // In "a=mid:<mid>", the regex matches <mid>.
+  var midMatches = mediaSection.match(/^a=mid:(.+)$/m);
+  return midMatches && midMatches[1];
 }
 
 /**
@@ -33384,10 +34512,11 @@ function setCodecPreferences(sdp, preferredAudioCodecs, preferredVideoCodecs) {
 /**
  * Return a new SDP string with simulcast settings.
  * @param {string} sdp
+ * @param {'planb' | 'unified'} sdpFormat
  * @param {Map<Track.ID, TrackAttributes>} trackIdsToAttributes
  * @returns {string} Updated SDP string
  */
-function setSimulcast(sdp, trackIdsToAttributes) {
+function setSimulcast(sdp, sdpFormat, trackIdsToAttributes) {
   var mediaSections = getMediaSections(sdp);
   var session = sdp.split('\r\nm=')[0];
   return [session].concat(mediaSections.map(function (section) {
@@ -33402,8 +34531,80 @@ function setSimulcast(sdp, trackIdsToAttributes) {
     var hasVP8PayloadType = payloadTypes.some(function (payloadType) {
       return vp8PayloadTypes.has(payloadType);
     });
-    return hasVP8PayloadType ? setSimulcastInMediaSection(section, trackIdsToAttributes) : section;
+    return hasVP8PayloadType ? setSimulcastInMediaSection(section, sdpFormat, trackIdsToAttributes) : section;
   })).concat('').join('\r\n');
+}
+
+/**
+ * Add or rewrite MSIDs for new m= sections in the given Unified Plan SDP with their
+ * corresponding local MediaStreamTrack IDs. These can be different when previously
+ * removed MediaStreamTracks are added back (or Track IDs may not be present in the
+ * SDPs at all once browsers implement the latest WebRTC spec).
+ * @param {string} sdp
+ * @param {Map<string, Track.ID>} activeMidsToTrackIds
+ * @param {Map<Track.Kind, Array<Track.ID>>} trackIdsByKind
+ * @returns {string}
+ */
+function unifiedPlanAddOrRewriteNewTrackIds(sdp, activeMidsToTrackIds, trackIdsByKind) {
+  var newMidsToTrackIds = Array.from(trackIdsByKind).reduce(function (midsToTrackIds, _ref) {
+    var _ref2 = _slicedToArray(_ref, 2),
+        kind = _ref2[0],
+        trackIds = _ref2[1];
+
+    var mediaSections = getMediaSections(sdp, kind);
+    var newMids = mediaSections.map(getMidForMediaSection).filter(function (mid) {
+      return !activeMidsToTrackIds.has(mid);
+    });
+    newMids.forEach(function (mid, i) {
+      return midsToTrackIds.set(mid, trackIds[i]);
+    });
+    return midsToTrackIds;
+  }, new Map());
+  return unifiedPlanAddOrRewriteTrackIds(sdp, newMidsToTrackIds);
+}
+
+/**
+ * Add or rewrite MSIDs in the given Unified Plan SDP with their corresponding local
+ * MediaStreamTrack IDs. These IDs need not be the same (or Track IDs may not be
+ * present in the SDPs at all once browsers implement the latest WebRTC spec).
+ * @param {string} sdp
+ * @param {Map<string, string>} midsToTrackIds
+ * @returns {string}
+ */
+function unifiedPlanAddOrRewriteTrackIds(sdp, midsToTrackIds) {
+  var mediaSections = getMediaSections(sdp);
+  var session = sdp.split('\r\nm=')[0];
+  return [session].concat(mediaSections.map(function (mediaSection) {
+    // Do nothing if the m= section represents neither audio nor video.
+    if (!/^m=(audio|video)/.test(mediaSection)) {
+      return mediaSection;
+    }
+    // This shouldn't happen, but in case there is no MID for the m= section, do nothing.
+    var mid = getMidForMediaSection(mediaSection);
+    if (!mid) {
+      return mediaSection;
+    }
+    // In case there is no Track ID for the given MID in the map, do nothing.
+    var trackId = midsToTrackIds.get(mid);
+    if (!trackId) {
+      return mediaSection;
+    }
+    // This shouldn't happen, but in case there is no a=msid: line, do nothing.
+    var attributes = (mediaSection.match(/^a=msid:(.+)$/m) || [])[1];
+    if (!attributes) {
+      return mediaSection;
+    }
+    // If the a=msid: line contains the "appdata" field, then replace it with the Track ID,
+    // otherwise append the Track ID.
+
+    var _attributes$split = attributes.split(' '),
+        _attributes$split2 = _slicedToArray(_attributes$split, 2),
+        msid = _attributes$split2[0],
+        trackIdToRewrite = _attributes$split2[1];
+
+    var msidRegex = new RegExp('msid:' + msid + (trackIdToRewrite ? ' ' + trackIdToRewrite : '') + '$', 'gm');
+    return mediaSection.replace(msidRegex, 'msid:' + msid + ' ' + trackId);
+  })).join('\r\n');
 }
 
 /**
@@ -33417,7 +34618,9 @@ exports.getMediaSections = getMediaSections;
 exports.setBitrateParameters = setBitrateParameters;
 exports.setCodecPreferences = setCodecPreferences;
 exports.setSimulcast = setSimulcast;
-},{"../":160,"./simulcast":166}],165:[function(require,module,exports){
+exports.unifiedPlanAddOrRewriteNewTrackIds = unifiedPlanAddOrRewriteNewTrackIds;
+exports.unifiedPlanAddOrRewriteTrackIds = unifiedPlanAddOrRewriteTrackIds;
+},{"../":170,"./simulcast":176}],175:[function(require,module,exports){
 'use strict';
 
 var RTCSessionDescription = require('@twilio/webrtc').RTCSessionDescription;
@@ -33469,6 +34672,7 @@ function sdpWorkaround(sdp) {
  */
 function mediaSectionWorkaround(mediaSection) {
   var ptToCodecName = createPtToCodecName(mediaSection);
+  mediaSection = deleteDuplicateRtxPts(mediaSection, ptToCodecName);
   var codecNameToPts = createCodecNameToPts(ptToCodecName);
   var rtxPts = codecNameToPts.get('rtx') || new Set();
 
@@ -33501,6 +34705,26 @@ function mediaSectionWorkaround(mediaSection) {
   });
 
   return mediaSection;
+}
+
+/**
+ * @param {string} mediaSection
+ * @param {Map<PT, Codec>} ptToCodecName
+ * @returns {string} newMediaSection
+ */
+function deleteDuplicateRtxPts(mediaSection, ptToCodecName) {
+  // NOTE(syerrapragada): In some cases Chrome produces an offer/answer
+  // with duplicate "rtx" payload mapping in media section. When applied,
+  // Chrome rejects the SDP. We workaround this by deleting duplicate
+  // "rtx" mappings found in SDP.
+  return Array.from(ptToCodecName.keys()).reduce(function (section, pt) {
+    var rtpmapRegex = new RegExp('^a=rtpmap:' + pt + ' rtx.+$', 'gm');
+    return (section.match(rtpmapRegex) || []).slice(ptToCodecName.get(pt) === 'rtx' ? 1 : 0).reduce(function (section, rtpmap) {
+      var rtpmapRegex = new RegExp('\r\n' + rtpmap);
+      var fmtpmapRegex = new RegExp('\r\na=fmtp:' + pt + ' apt=[0-9]+');
+      return section.replace(rtpmapRegex, '').replace(fmtpmapRegex, '');
+    }, section);
+  }, mediaSection);
 }
 
 /**
@@ -33611,8 +34835,10 @@ function addFmtpAttributeForRtxPt(mediaSection, rtxPt, pt) {
 }
 
 module.exports = workaround;
-},{"./":164,"@twilio/webrtc":41}],166:[function(require,module,exports){
+},{"./":174,"@twilio/webrtc":41}],176:[function(require,module,exports){
 'use strict';
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -33635,7 +34861,7 @@ function createSSRC() {
  * @property {boolean} isSimulcastEnabled
  * @property {Map<RtxSSRC, PrimarySSRC>} rtxPairs
  * @property {Set<PrimarySSRC>} primarySSRCs
- * @property {string} streamId
+ * @property {MediaStreamID} streamId
  * @property {Track.ID} trackId
  */
 
@@ -33643,7 +34869,7 @@ var TrackAttributes = function () {
   /**
    * Construct a {@link MediaStreamTrack} attribute store.
    * @param {Track.ID} trackId - The MediaStreamTrack ID
-   * @param {string} streamId - The MediaStream ID
+   * @param {MediaStreamID} streamId - The MediaStream ID
    * @param {string} cName - The MediaStream cname
    */
   function TrackAttributes(trackId, streamId, cName) {
@@ -33809,14 +35035,52 @@ function getSSRCRtxPairs(section) {
 }
 
 /**
+ * Create SSRC attribute tuples.
+ * @param {string} section
+ * @param {'planb' | 'unified'} sdpFormat
+ * @returns {Array<[SSRC, MediaStreamID, Track.ID]>}
+ */
+function createSSRCAttributeTuples(section, sdpFormat) {
+  return {
+    planb: createPlanBSSRCAttributeTuples,
+    unified: createUnifiedPlanSSRCAttributeTuples
+  }[sdpFormat](section);
+}
+/**
+ * Create "plan-b" SSRC attribute tuples.
+ * @param {string} section
+ * @returns {Array<[SSRC, MediaStreamID, Track.ID]>}
+ */
+function createPlanBSSRCAttributeTuples(section) {
+  return getMatches(section, '^a=ssrc:([0-9]+) msid:([^\\s]+) ([^\\s]+)$');
+}
+/**
+ * Create "unified-plan" SSRC attribute tuples.
+ * @param {string} section
+ * @returns {Array<[SSRC, MediaStreamID, Track.ID]>}
+ */
+function createUnifiedPlanSSRCAttributeTuples(section) {
+  var _flatMap = flatMap(getMatches(section, '^a=msid:(.+) (.+)$')),
+      _flatMap2 = _slicedToArray(_flatMap, 2),
+      streamId = _flatMap2[0],
+      trackId = _flatMap2[1];
+
+  var ssrcs = flatMap(getMatches(section, '^a=ssrc:(.+) cname:.+$'));
+  return ssrcs.map(function (ssrc) {
+    return [ssrc, streamId, trackId];
+  });
+}
+
+/**
  * Create a Map of MediaStreamTrack IDs and their {@link TrackAttributes}.
  * @param {string} section - SDP media section
+ * @param {'planb' | 'unified'} sdpFormat
  * @returns {Map<Track.ID, TrackAttributes>}
  */
-function createTrackIdsToAttributes(section) {
+function createTrackIdsToAttributes(section, sdpFormat) {
   var simSSRCs = getSimulcastSSRCs(section);
-  var ssrcAttrTuples = getMatches(section, '^a=ssrc:([0-9]+) msid:([^\\s]+) ([^\\s]+)$');
   var rtxPairs = getSSRCRtxPairs(section);
+  var ssrcAttrTuples = createSSRCAttributeTuples(section, sdpFormat);
 
   return ssrcAttrTuples.reduce(function (trackIdsToSSRCs, tuple) {
     var ssrc = tuple[0];
@@ -33834,12 +35098,13 @@ function createTrackIdsToAttributes(section) {
 /**
  * Apply simulcast settings to the given SDP media section.
  * @param {string} section - SDP media section
+ * @param {'planb' | 'unified'} sdpFormat
  * @param {Map<Track.ID, TrackAttributes>} trackIdsToAttributes - Existing
  *   map which will be updated for new MediaStreamTrack IDs
  * @returns {string} - The transformed SDP media section
  */
-function setSimulcastInMediaSection(section, trackIdsToAttributes) {
-  var newTrackIdsToAttributes = createTrackIdsToAttributes(section);
+function setSimulcastInMediaSection(section, sdpFormat, trackIdsToAttributes) {
+  var newTrackIdsToAttributes = createTrackIdsToAttributes(section, sdpFormat);
   var newTrackIds = Array.from(newTrackIdsToAttributes.keys());
   var trackIds = Array.from(trackIdsToAttributes.keys());
   var trackIdsToAdd = difference(newTrackIds, trackIds);
@@ -33875,6 +35140,11 @@ function setSimulcastInMediaSection(section, trackIdsToAttributes) {
 }
 
 /**
+ * String representing a MediaStream ID.
+ * @typedef {string} MediaStreamID
+ */
+
+/**
  * String representing the SSRC of a MediaStreamTrack.
  * @typedef {string} SSRC
  */
@@ -33895,7 +35165,7 @@ function setSimulcastInMediaSection(section, trackIdsToAttributes) {
  */
 
 module.exports = setSimulcastInMediaSection;
-},{"../":160}],167:[function(require,module,exports){
+},{"../":170}],177:[function(require,module,exports){
 'use strict';
 
 /**
@@ -33938,7 +35208,7 @@ var IdentityTrackMatcher = function () {
 }();
 
 module.exports = IdentityTrackMatcher;
-},{}],168:[function(require,module,exports){
+},{}],178:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -34003,7 +35273,7 @@ var MIDTrackMatcher = function () {
 }();
 
 module.exports = MIDTrackMatcher;
-},{"../":164}],169:[function(require,module,exports){
+},{"../":174}],179:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -34145,16 +35415,19 @@ var OrderedTrackMatcher = function () {
 }();
 
 module.exports = OrderedTrackMatcher;
-},{"../":164,"../../":160}],170:[function(require,module,exports){
+},{"../":174,"../../":170}],180:[function(require,module,exports){
 /* globals RTCPeerConnection, webkitRTCPeerConnection, mozRTCPeerConnection, navigator */
 'use strict';
 
-var guessBrowser = require('./').guessBrowser;
+var _require = require('@twilio/webrtc/lib/util'),
+    guessBrowser = _require.guessBrowser;
 
 /**
  * Check whether PeerConnection API is supported.
  * @returns {boolean}
  */
+
+
 function isRTCPeerConnectionSupported() {
   return typeof RTCPeerConnection !== 'undefined' || typeof webkitRTCPeerConnection !== 'undefined' || typeof mozRTCPeerConnection !== 'undefined';
 }
@@ -34176,7 +35449,7 @@ function isSupported() {
 }
 
 module.exports = isSupported;
-},{"./":160}],171:[function(require,module,exports){
+},{"@twilio/webrtc/lib/util":54}],181:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -34337,7 +35610,7 @@ var TimeoutPromise = function (_EventEmitter) {
  */
 
 module.exports = TimeoutPromise;
-},{"./":160,"events":58}],172:[function(require,module,exports){
+},{"./":170,"events":58}],182:[function(require,module,exports){
 'use strict';
 
 // NOTE: Do not edit this file. This code is auto-generated. Contact the
@@ -35537,7 +36810,7 @@ var ConfigurationAcquireTurnFailedError = function (_TwilioError51) {
 
 exports.ConfigurationAcquireTurnFailedError = ConfigurationAcquireTurnFailedError;
 Object.defineProperty(TwilioErrorByCode, 53501, { value: ConfigurationAcquireTurnFailedError });
-},{"./twilioerror":173}],173:[function(require,module,exports){
+},{"./twilioerror":183}],183:[function(require,module,exports){
 'use strict';
 
 /**
@@ -35609,7 +36882,7 @@ var TwilioError = function (_Error) {
 }(Error);
 
 module.exports = TwilioError;
-},{}],174:[function(require,module,exports){
+},{}],184:[function(require,module,exports){
 /* globals webkitAudioContext, AudioContext */
 'use strict';
 
@@ -35708,7 +36981,7 @@ var AudioContextFactory = function () {
 }();
 
 module.exports = new AudioContextFactory();
-},{}],175:[function(require,module,exports){
+},{}],185:[function(require,module,exports){
 'use strict';
 
 /**
@@ -35771,7 +37044,7 @@ function detectSilence(audioContext, stream, timeout) {
 }
 
 module.exports = detectSilence;
-},{}],176:[function(require,module,exports){
+},{}],186:[function(require,module,exports){
 'use strict';
 
 var detectSilence = require('./detectsilence');
@@ -35844,61 +37117,30 @@ to get a new one, but we\'ve run out of retries; returning it anyway.');
 }
 
 module.exports = workaround;
-},{"./audiocontext":174,"./detectsilence":175}],177:[function(require,module,exports){
+},{"./audiocontext":184,"./detectsilence":185}],187:[function(require,module,exports){
 module.exports={
-  "_from": "twilio-video@^1.14.1",
-  "_id": "twilio-video@1.14.1",
-  "_inBundle": false,
-  "_integrity": "sha512-DkVvv6fMTQnkf16KRJjlBPpgg2H3psKr1gT6yNHFIbe+r1vVAbo50FS74LQzVgMvnkgbmhuMebmGPXlpsm35FQ==",
-  "_location": "/twilio-video",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "range",
-    "registry": true,
-    "raw": "twilio-video@^1.14.1",
-    "name": "twilio-video",
-    "escapedName": "twilio-video",
-    "rawSpec": "^1.14.1",
-    "saveSpec": null,
-    "fetchSpec": "^1.14.1"
-  },
-  "_requiredBy": [
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/twilio-video/-/twilio-video-1.14.1.tgz",
-  "_shasum": "ecbcf39df5fec7d5c148479ca457297f3d88e2db",
-  "_spec": "twilio-video@^1.14.1",
-  "_where": "/Users/CARECLOUD/Documents/Edwar/video-quickstart-js",
-  "author": {
-    "name": "Mark Andrus Roberts",
-    "email": "mroberts@twilio.com"
-  },
-  "browser": {
-    "ws": "./src/ws.js",
-    "xmlhttprequest": "./src/xmlhttprequest.js"
-  },
-  "bugs": {
-    "url": "https://github.com/twilio/twilio-video.js/issues"
-  },
-  "bundleDependencies": false,
-  "contributors": [
-    {
-      "name": "Ryan Rowland",
-      "email": "rrowland@twilio.com"
-    },
-    {
-      "name": "Manjesh Malavalli",
-      "email": "mmalavalli@twilio.com"
-    }
-  ],
-  "dependencies": {
-    "@twilio/sip.js": "^0.7.7",
-    "@twilio/webrtc": "^2.1.3",
-    "ws": "^3.3.1",
-    "xmlhttprequest": "^1.8.0"
-  },
-  "deprecated": false,
+  "name": "twilio-video",
+  "title": "Twilio Video",
   "description": "Twilio Video JavaScript library",
+  "version": "1.18.2",
+  "homepage": "https://twilio.com",
+  "author": "Mark Andrus Roberts <mroberts@twilio.com>",
+  "contributors": [
+    "Ryan Rowland <rrowland@twilio.com>",
+    "Manjesh Malavalli <mmalavalli@twilio.com>"
+  ],
+  "keywords": [
+    "twilio",
+    "webrtc",
+    "library",
+    "javascript",
+    "video",
+    "rooms"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/twilio/twilio-video.js.git"
+  },
   "devDependencies": {
     "@types/express": "^4.11.0",
     "@types/node": "^8.5.1",
@@ -35921,11 +37163,11 @@ module.exports={
     "karma-chrome-launcher": "^2.0.0",
     "karma-firefox-launcher": "^1.0.1",
     "karma-mocha": "^1.3.0",
-    "karma-safaritechpreview-launcher": "0.0.6",
+    "karma-safari-launcher": "^1.0.0",
     "karma-spec-reporter": "^0.0.31",
     "mocha": "^3.2.0",
     "npm-run-all": "^4.0.2",
-    "phantom": "^4.0.2",
+    "puppeteer": "^1.12.2",
     "release-tool": "^0.2.2",
     "requirejs": "^2.3.3",
     "rimraf": "^2.6.1",
@@ -35944,86 +37186,105 @@ module.exports={
   "engines": {
     "node": ">=0.12"
   },
-  "homepage": "https://twilio.com",
-  "keywords": [
-    "twilio",
-    "webrtc",
-    "library",
-    "javascript",
-    "video",
-    "rooms"
-  ],
   "license": "BSD-3-Clause",
   "main": "./es5/index.js",
-  "name": "twilio-video",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/twilio/twilio-video.js.git"
-  },
   "scripts": {
-    "build": "npm-run-all clean lint docs cover test:integration build:es5 build:js build:min.js test:umd",
-    "build:es5": "rimraf ./es5 && babel lib -d es5",
-    "build:js": "node ./scripts/build.js ./src/twilio-video.js ./LICENSE.md ./dist/twilio-video.js",
-    "build:min.js": "uglifyjs ./dist/twilio-video.js -o ./dist/twilio-video.min.js --comments \"/^! twilio-video.js/\" -b beautify=false,ascii_only=true",
-    "build:quick": "npm-run-all clean lint docs build:es5 build:js build:min.js",
-    "build:travis": "npm-run-all clean lint docs cover test:integration:travis build:es5 build:js build:min.js test:umd test:framework",
-    "clean": "rimraf ./coverage ./es5 ./dist",
-    "cover": "istanbul cover node_modules/mocha/bin/_mocha -- ./test/unit/index.js",
-    "docs": "node ./scripts/docs.js ./dist/docs",
     "lint": "eslint ./lib ./test/*.js ./test/framework/*.js ./test/lib/*.js ./test/integration/** ./test/unit/**",
-    "test": "npm-run-all test:unit test:integration",
-    "test:crossbrowser": "npm-run-all test:crossbrowser:*",
-    "test:crossbrowser:build": "npm-run-all test:crossbrowser:build:*",
-    "test:crossbrowser:build:browser": "cd ./test/crossbrowser && browserify lib/crossbrowser/src/browser/index.js > src/browser/index.js",
+    "test:unit": "mocha ./test/unit/index.js",
+    "test:integration:adapter": "node ./scripts/karma.js karma/integration.adapter.conf.js",
+    "test:integration:travis": "node ./scripts/integration.js",
+    "test:integration": "node ./scripts/karma.js karma/integration.conf.js",
+    "test:umd": "mocha ./test/umd/index.js",
     "test:crossbrowser:build:clean": "rimraf ./test/crossbrowser/lib ./test/crossbrowser/src/browser/index.js",
     "test:crossbrowser:build:lint": "cd ./test/crossbrowser && tslint --project tsconfig.json",
     "test:crossbrowser:build:tsc": "cd ./test/crossbrowser && tsc",
+    "test:crossbrowser:build:browser": "cd ./test/crossbrowser && browserify lib/crossbrowser/src/browser/index.js > src/browser/index.js",
+    "test:crossbrowser:build": "npm-run-all test:crossbrowser:build:*",
     "test:crossbrowser:test": "cd ./test/crossbrowser && mocha --compilers ts:ts-node/register test/integration/spec/**/*.ts",
-    "test:framework": "npm-run-all test:framework:angular test:framework:no-framework test:framework:react",
-    "test:framework:angular": "npm-run-all test:framework:angular:*",
-    "test:framework:angular:install": "cd ./test/framework/twilio-video-angular && rimraf ./node_modules && npm install",
-    "test:framework:angular:run": "mocha ./test/framework/twilio-video-angular.js",
-    "test:framework:no-framework": "npm-run-all test:framework:no-framework:*",
-    "test:framework:no-framework:run": "mocha ./test/framework/twilio-video-no-framework.js",
-    "test:framework:react": "npm-run-all test:framework:react:*",
-    "test:framework:react:build": "cd ./test/framework/twilio-video-react && npm run build",
-    "test:framework:react:install": "cd ./test/framework/twilio-video-react && rimraf ./node_modules && npm install",
-    "test:framework:react:run": "mocha ./test/framework/twilio-video-react.js",
-    "test:framework:react:test": "node ./scripts/framework.js twilio-video-react",
-    "test:integration": "node ./scripts/karma.js karma/integration.conf.js",
-    "test:integration:adapter": "node ./scripts/karma.js karma/integration.adapter.conf.js",
-    "test:integration:travis": "node ./scripts/integration.js",
-    "test:sdkdriver": "npm-run-all test:sdkdriver:*",
-    "test:sdkdriver:build": "npm-run-all test:sdkdriver:build:*",
+    "test:crossbrowser": "npm-run-all test:crossbrowser:*",
     "test:sdkdriver:build:clean": "rimraf ./test/lib/sdkdriver/lib ./test/lib/sdkdriver/test/integration/browser/index.js",
     "test:sdkdriver:build:lint": "cd ./test/lib/sdkdriver && tslint --project tsconfig.json",
     "test:sdkdriver:build:tsc": "cd ./test/lib/sdkdriver && tsc --rootDir src",
-    "test:sdkdriver:test": "npm-run-all test:sdkdriver:test:*",
-    "test:sdkdriver:test:integration": "npm-run-all test:sdkdriver:test:integration:*",
+    "test:sdkdriver:build": "npm-run-all test:sdkdriver:build:*",
+    "test:sdkdriver:test:unit": "cd ./test/lib/sdkdriver && mocha --compilers ts:ts-node/register test/unit/spec/**/*.ts",
     "test:sdkdriver:test:integration:browser": "cd ./test/lib/sdkdriver/test/integration && browserify browser/browser.js > browser/index.js",
     "test:sdkdriver:test:integration:run": "cd ./test/lib/sdkdriver && mocha --compilers ts:ts-node/register test/integration/spec/**/*.ts",
-    "test:sdkdriver:test:unit": "cd ./test/lib/sdkdriver && mocha --compilers ts:ts-node/register test/unit/spec/**/*.ts",
-    "test:umd": "mocha ./test/umd/index.js",
-    "test:unit": "mocha ./test/unit/index.js"
+    "test:sdkdriver:test:integration": "npm-run-all test:sdkdriver:test:integration:*",
+    "test:sdkdriver:test": "npm-run-all test:sdkdriver:test:*",
+    "test:sdkdriver": "npm-run-all test:sdkdriver:*",
+    "test:framework:angular:install": "cd ./test/framework/twilio-video-angular && rimraf ./node_modules && npm install",
+    "test:framework:angular:run": "mocha ./test/framework/twilio-video-angular.js",
+    "test:framework:angular": "npm-run-all test:framework:angular:*",
+    "test:framework:no-framework:run": "mocha ./test/framework/twilio-video-no-framework.js",
+    "test:framework:no-framework": "npm-run-all test:framework:no-framework:*",
+    "test:framework:react:install": "cd ./test/framework/twilio-video-react && rimraf ./node_modules && npm install",
+    "test:framework:react:test": "node ./scripts/framework.js twilio-video-react",
+    "test:framework:react:build": "cd ./test/framework/twilio-video-react && npm run build",
+    "test:framework:react:run": "mocha ./test/framework/twilio-video-react.js",
+    "test:framework:react": "npm-run-all test:framework:react:*",
+    "test:framework": "npm-run-all test:framework:angular test:framework:no-framework test:framework:react",
+    "test": "npm-run-all test:unit test:integration",
+    "build:es5": "rimraf ./es5 && babel lib -d es5",
+    "build:js": "node ./scripts/build.js ./src/twilio-video.js ./LICENSE.md ./dist/twilio-video.js",
+    "build:min.js": "uglifyjs ./dist/twilio-video.js -o ./dist/twilio-video.min.js --comments \"/^! twilio-video.js/\" -b beautify=false,ascii_only=true",
+    "build": "npm-run-all clean lint docs cover test:integration build:es5 build:js build:min.js test:umd",
+    "build:travis": "npm-run-all clean lint docs cover test:integration:travis build:es5 build:js build:min.js test:umd test:framework",
+    "build:quick": "npm-run-all clean lint docs build:es5 build:js build:min.js",
+    "docs": "node ./scripts/docs.js ./dist/docs",
+    "clean": "rimraf ./coverage ./es5 ./dist",
+    "cover": "istanbul cover node_modules/mocha/bin/_mocha -- ./test/unit/index.js"
   },
-  "title": "Twilio Video",
-  "version": "1.14.1"
+  "dependencies": {
+    "@twilio/sip.js": "^0.7.7",
+    "@twilio/webrtc": "2.3.0",
+    "ws": "^3.3.1",
+    "xmlhttprequest": "^1.8.0"
+  },
+  "browser": {
+    "ws": "./src/ws.js",
+    "xmlhttprequest": "./src/xmlhttprequest.js"
+  }
 }
 
-},{}],178:[function(require,module,exports){
+},{}],188:[function(require,module,exports){
 module.exports = WebSocket;
 
-},{}],179:[function(require,module,exports){
+},{}],189:[function(require,module,exports){
 exports.XMLHttpRequest = XMLHttpRequest;
 
-},{}],180:[function(require,module,exports){
+},{}],190:[function(require,module,exports){
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    var TempCtor = function () {}
+    TempCtor.prototype = superCtor.prototype
+    ctor.prototype = new TempCtor()
+    ctor.prototype.constructor = ctor
+  }
+}
+
+},{}],191:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],181:[function(require,module,exports){
+},{}],192:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -36613,4 +37874,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":180,"_process":61,"inherits":59}]},{},[3]);
+},{"./support/isBuffer":191,"_process":60,"inherits":190}]},{},[3]);

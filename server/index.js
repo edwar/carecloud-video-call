@@ -60,7 +60,7 @@ app.get("/token", function(request, response) {
   var token = new AccessToken(
     "ACc748354e6de06f3e526b492791b94568",
     "SKb78fa6fdae609ff2f1c70082f9eba7b6",
-    "c44b9114f9124939e3538242feb35977"
+    "Fg3JMUTXMxVWgHawJwrRPGSycObEn8UK"
   );
   console.log(token, "token");
   // Assign the generated identity to the token.
@@ -75,7 +75,7 @@ app.get("/token", function(request, response) {
     identity: identity,
     token: token.toJwt()
   });
-  console.log("response");
+  console.log("response", token);
 });
 
 // Create http server and run it.
